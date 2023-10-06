@@ -1679,6 +1679,10 @@ function main_runner(Mass_a, Ax_g, θm, ωPul, B0, rNS, Mass_NS, Ntajs; flat=tru
         print("Too small Max R.... quitting.... \n")
         omegaP_test = RT.func_Plasma(rNS .* [sin.(θm) 0.0 cos.(θm)], 0.0, θm, ωPul, B0, rNS; sphericalX=false);
         print("Max omegaP found... \t", omegaP_test, "Max radius found...\t", maxR, "\n")
+        fileN = File_Name_Out(Mass_a, Ax_g, Mass_NS, rNS, v_NS, B0, 2 .* pi ./ ωPul, θm, null_fill, ntimes; file_tag=file_tag, mag_mod=mag_mod, B_DQ=B_DQ, θQ=θmQ, reflect=reflect_LFL, dead=dead, dead_rmax=dead_rmax)
+        
+        saveAll = [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.0 0 0 0 0 0 0 [0]' 0 0 0]
+        write_to_file(fileN, saveAll, Mass_a, Ax_g, θm, ωPul, B0, rNS, Mass_NS, flat, isotropic, melrose, add_tau, fix_time, delta_on_v, rho_DM, v_NS, vmean_ax, null_fill, dead, dead_rmax; sve_mode=sve_mode)
         return
     end
     #####
