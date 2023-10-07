@@ -1932,7 +1932,7 @@ function main_runner(Mass_a, Ax_g, θm, ωPul, B0, rNS, Mass_NS, Ntajs; flat=tru
     saveAll[:, 5] .*= 1 ./ ( float(f_inx) ); # divide off by N trajectories sampled
     
 
-    fileN = File_Name_Out(Mass_a, Ax_g, Mass_NS, rNS, v_NS, B0, 2 .* pi ./ ωPul, θm, null_fill, ntimes; file_tag=file_tag, mag_mod=mag_mod, B_DQ=B_DQ, θQ=θmQ, reflect=reflect_LFL, dead=dead, dead_rmax=dead_rmax)
+    fileN = File_Name_Out(Mass_a, Ax_g, Mass_NS, rNS, v_NS, B0, 2 .* pi ./ ωPul, θm, null_fill, Ntajs; file_tag=file_tag, mag_mod=mag_mod, B_DQ=B_DQ, θQ=θmQ, reflect=reflect_LFL, dead=dead, dead_rmax=dead_rmax)
   
     write_to_file(fileN, saveAll, Mass_a, Ax_g, θm, ωPul, B0, rNS, Mass_NS, flat, isotropic, melrose, add_tau, fix_time, delta_on_v, rho_DM, v_NS, vmean_ax, null_fill, dead, dead_rmax; sve_mode=sve_mode)
 
