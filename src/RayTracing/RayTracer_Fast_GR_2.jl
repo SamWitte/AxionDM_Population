@@ -1652,7 +1652,7 @@ function write_to_file(fname, sve_array, Mass_a, Ax_g, θm, ωPul, B0, rNS, Mass
     return
 end
 
-function main_runner(Mass_a, Ax_g, θm, ωPul, B0, rNS, Mass_NS, Ntajs; flat=true, isotropic=false, melrose=false, CP_one_D=false, ode_err=1e-5, fix_time=0.0, add_tau=false, file_tag="", ntimes=1000, v_NS=[0 0 0], rho_DM=0.45, save_more=false, vmean_ax=220.0, dir_tag="results", n_maxSample=6, thick_surface=false, iseed=Nothing, sve_mode=1, plasma_mod="GJ", mag_mod="Dipole", lambdaM=1.0, psi=0.0, delta_on_v=true, θmQ=0.0, phiQ=0.0, B_DQ=0.0, ray_trace=true, reflect_LFL=false, null_fill=0.0, dead=false, dead_rmax=30.0)
+function main_runner(Mass_a, Ax_g, θm, ωPul, B0, rNS, Mass_NS, Ntajs; flat=true, isotropic=false, melrose=false, CP_one_D=false, ode_err=1e-5, fix_time=0.0, add_tau=false, file_tag="", ntimes=4, v_NS=[0 0 0], rho_DM=0.45, save_more=false, vmean_ax=220.0, dir_tag="results", n_maxSample=6, thick_surface=false, iseed=Nothing, sve_mode=1, plasma_mod="GJ", mag_mod="Dipole", lambdaM=1.0, psi=0.0, delta_on_v=true, θmQ=0.0, phiQ=0.0, B_DQ=0.0, ray_trace=true, reflect_LFL=false, null_fill=0.0, dead=false, dead_rmax=30.0)
 
     
     if iseed != Nothing
@@ -1679,7 +1679,7 @@ function main_runner(Mass_a, Ax_g, θm, ωPul, B0, rNS, Mass_NS, Ntajs; flat=tru
         print("Too small Max R.... quitting.... \n")
         omegaP_test = RT.func_Plasma(rNS .* [sin.(θm) 0.0 cos.(θm)], 0.0, θm, ωPul, B0, rNS; sphericalX=false);
         print("Max omegaP found... \t", omegaP_test, "Max radius found...\t", maxR, "\n")
-        fileN = File_Name_Out(Mass_a, Ax_g, Mass_NS, rNS, v_NS, B0, 2 .* pi ./ ωPul, θm, null_fill, ntimes; file_tag=file_tag, mag_mod=mag_mod, B_DQ=B_DQ, θQ=θmQ, reflect=reflect_LFL, dead=dead, dead_rmax=dead_rmax)
+        fileN = File_Name_Out(Mass_a, Ax_g, Mass_NS, rNS, v_NS, B0, 2 .* pi ./ ωPul, θm, null_fill, Ntajs; file_tag=file_tag, mag_mod=mag_mod, B_DQ=B_DQ, θQ=θmQ, reflect=reflect_LFL, dead=dead, dead_rmax=dead_rmax)
         
         saveAll = [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.0 0 0 0 0 0 0 [0]' 0 0 0]
         write_to_file(fileN, saveAll, Mass_a, Ax_g, θm, ωPul, B0, rNS, Mass_NS, flat, isotropic, melrose, add_tau, fix_time, delta_on_v, rho_DM, v_NS, vmean_ax, null_fill, dead, dead_rmax; sve_mode=sve_mode)

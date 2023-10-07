@@ -239,7 +239,7 @@ function combine_files(Mass_a, Ax_g, θm, ωPul, B0, Ntajs, Nruns, ode_err, fix_
     
     
     for i = 0:(Nruns-1)
-        fileN = File_Name_Out(Mass_a, Ax_g, Mass_NS, rNS, v_NS, B0, P, θm, null_fill, ntimes; file_tag=file_tag, indx=i, mag_mod=mag_mod, B_DQ=B_DQ, θQ=θmQ, reflect=reflect_LFL, dead=dead, dead_rmax=dead_rmax)
+        fileN = File_Name_Out(Mass_a, Ax_g, Mass_NS, rNS, v_NS, B0, P, θm, null_fill, Ntajs; file_tag=file_tag, indx=i, mag_mod=mag_mod, B_DQ=B_DQ, θQ=θmQ, reflect=reflect_LFL, dead=dead, dead_rmax=dead_rmax)
     
         push!(fileL, fileN);
     end
