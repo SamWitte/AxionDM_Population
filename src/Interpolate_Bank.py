@@ -3,7 +3,7 @@ import glob
 import h5py
 
 def check_conversion(MassA, B, P, thetaM):
-    ne_max = (2*np.pi / P) * (B * 1.95e-2) / 0.3 * 6.58e-16
+    ne_max = 2 * (2*np.pi / P) * (B * 1.95e-2) / 0.3 * 6.58e-16
     max_omegaP = np.sqrt(4*np.pi / 137 * ne_max / 5.11e5)
     if max_omegaP < MassA:
         return 0
