@@ -49,7 +49,7 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     argFlip_B = np.where(np.diff(np.sign(Blist - Bv)) != 0.0)
     Bmin = Blist[argFlip_B]
     Bmax = Blist[argFlip_B + 1]
-    weight_B = (np.log10(Bmax) - np.log10(Bv)) ./ (np.log10(Bmax) .- np.log10(Bmin))
+    weight_B = (np.log10(Bmax) - np.log10(Bv)) / (np.log10(Bmax) - np.log10(Bmin))
 
     argFlip_P = np.where(np.diff(np.sign(Plist - Pv)) != 0.0)
     Pmin = Plist[argFlip_P]
