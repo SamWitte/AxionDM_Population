@@ -26,8 +26,10 @@ def run_population(MassA, file_in, dir_out, file_out, NS_population='Young'):
         locNS = r_x * np.array([np.sin(theta_x) * np.cos(phi_x), np.sin(theta_x) * np.sin(phi_x), np.cos(theta_x)])
         xE = np.array([0.0, 8.3, 0.0])
         dist_earth = np.sqrt(np.sum((xE - locNS)**2))
-    
-        out = Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=(vNS/2.998e5), density_rescale=rho_DM, v0_rescale=vDM)
+        
+        dop_S = (vNS/2.998e5) * np.sin(sample_theta()) * np.sin(np.random.rand() * 2*np.pi)
+        
+        out = Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=dop_S, density_rescale=rho_DM, v0_rescale=vDM)
         if np.all(out == 0):
             continue
         out[:, 1] *= (1.60e-12) / dist_earth**2 * (3.24e-22)**2 / 1e-23 # Jy-Hz (ie divide by bandwidth in Hz to get flux density)
