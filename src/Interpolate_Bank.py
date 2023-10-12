@@ -2,6 +2,7 @@ import numpy as np
 import glob
 import h5py
 
+
 def check_conversion(MassA, B, P, thetaM):
     ne_max = 2 * (2*np.pi / P) * (B * 1.95e-2) / 0.3 * 6.58e-16
     max_omegaP = np.sqrt(4*np.pi / 137 * ne_max / 5.11e5)
@@ -10,7 +11,7 @@ def check_conversion(MassA, B, P, thetaM):
     else:
         return 1
 
-def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=0.0, density_rescale=0.45, v0_rescale=220.0)
+def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=0.0, density_rescale=0.45, v0_rescale=220.0):
     # Mass of axion
     # Viewing angle
     # Magnetic field of pulsar
