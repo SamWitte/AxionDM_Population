@@ -58,7 +58,7 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     weight_P = (Pmax - Pv) / (Pmax - Pmin)
 
 
-    output = []
+    output = None
 
     # DEAL WITH POSSIBILITY THAT ONE FILE HAS ZEROS....
     # for moment i dont care
@@ -87,8 +87,12 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     rates = fileL["weights"][:]
     ergs = fileL["erg_loc"][:]
     rates_small = theta_cut(rates, ThetaVals, ThetaV, eps=eps_theta)
+    ergs_small = theta_cut(ergs, ThetaVals, ThetaV, eps=eps_theta)
     photons = rates_small / ( np.sin(ThetaV) * 2 * np.sin(eps_theta)) / Pv  # eV / s
-    output.append([ergs, photons * weight])
+    if output == None:
+        output = np.hstack((ergs_small, photons * weight))
+    else:
+        output = np.vstack((output, np.hstack((ergs_small, photons * weight))))
 
     file1 = np.all(np.column_stack((file_params[:, 1]==Bmax, file_params[:,2]==Pmax)), axis=1)
     fileL = h5py.File(bankF[int(file_params[file1, 0])], "r")
@@ -99,8 +103,12 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     rates = fileL["weights"][:]
     ergs = fileL["erg_loc"][:]
     rates_small = theta_cut(rates, ThetaVals, ThetaV, eps=eps_theta)
+    ergs_small = theta_cut(ergs, ThetaVals, ThetaV, eps=eps_theta)
     photons = rates_small / ( np.sin(ThetaV) * 2 * np.sin(eps_theta)) / Pv  # eV / s
-    output.append([ergs, photons * weight])
+    if output == None:
+        output = np.hstack((ergs_small, photons * weight))
+    else:
+        output = np.vstack((output, np.hstack((ergs_small, photons * weight))))
 
 
     
@@ -113,8 +121,12 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     rates = fileL["weights"][:]
     ergs = fileL["erg_loc"][:]
     rates_small = theta_cut(rates, ThetaVals, ThetaV, eps=eps_theta)
+    ergs_small = theta_cut(ergs, ThetaVals, ThetaV, eps=eps_theta)
     photons = rates_small / ( np.sin(ThetaV) * 2 * np.sin(eps_theta)) / Pv  # eV / s
-    output.append([ergs, photons * weight])
+    if output == None:
+        output = np.hstack((ergs_small, photons * weight))
+    else:
+        output = np.vstack((output, np.hstack((ergs_small, photons * weight))))
 
     file1 = np.all(np.column_stack((file_params[:, 1]==Bmax, file_params[:,2]==Pmin)), axis=1)
     fileL = h5py.File(bankF[int(file_params[file1, 0])], "r")
@@ -125,10 +137,14 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     rates = fileL["weights"][:]
     ergs = fileL["erg_loc"][:]
     rates_small = theta_cut(rates, ThetaVals, ThetaV, eps=eps_theta)
+    ergs_small = theta_cut(ergs, ThetaVals, ThetaV, eps=eps_theta)
     photons = rates_small / ( np.sin(ThetaV) * 2 * np.sin(eps_theta)) / Pv  # eV / s
-    output.append([ergs, photons * weight])
+    if output == None:
+        output = np.hstack((ergs_small, photons * weight))
+    else:
+        output = np.vstack((output, np.hstack((ergs_small, photons * weight))))
 
-    output = np.asarray(output)
+    
     output[:,0] += dopplerS
     output[:, 1] *= (density_rescale / 0.45)
     # add v0_rescale
