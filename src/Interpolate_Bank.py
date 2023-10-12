@@ -85,7 +85,7 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     
     ThetaVals = fileL["thetaX_final"][:]
     rates = fileL["weights"][:]
-    ergs = fileL["erg_loc"][:] / fileL["red_factor"][:] # the second factor is only there because of a mistake before
+    ergs = fileL["erg_loc"][:] * fileL["red_factor"][:] # the second factor is only there because of a mistake before
     rates_small = theta_cut(rates, ThetaVals, ThetaV, eps=eps_theta)
     ergs_small = theta_cut(ergs, ThetaVals, ThetaV, eps=eps_theta)
     photons = rates_small / ( np.sin(ThetaV) * 2 * np.sin(eps_theta)) / Pv  # eV / s
