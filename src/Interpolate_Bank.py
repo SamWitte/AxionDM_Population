@@ -19,7 +19,8 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     ##### Assumes rectangular grid!
 
 
-    MassA_tag = "Ma_{:.2e}".format(MassA)
+    MassA_tag_temp = "Ma_{:.2e}".format(MassA)
+    MassA_tag = MassA_tag_temp[:-2] + MassA_tag_temp[-1]
     Gagg_tag = "AxionG_{:.1e}".format(gagg)
     bankF = glob.glob("RayTracing/results/*"+MassA_tag+"*"+Gagg_tag+"*")
     print(bankF)
