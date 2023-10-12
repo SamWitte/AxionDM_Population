@@ -80,7 +80,7 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
 
     # find each file to interpolate
     file1 = np.all(np.column_stack((file_params[:, 1]==Bmin, file_params[:,2]==Pmin)), axis=1)
-    fileL = h5py.File(bankF[file_params[file1, 0]], "r")
+    fileL = h5py.File(bankF[int(file_params[file1, 0]]), "r")
     weight = weight_P * weight_B
     
     ThetaVals = fileL["thetaX_final"][:]
@@ -91,7 +91,7 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     output.append([ergs, photons * weight])
 
     file1 = np.all(np.column_stack((file_params[:, 1]==Bmax, file_params[:,2]==Pmax)), axis=1)
-    fileL = h5py.File(bankF[file_params[file1, 0]], "r")
+    fileL = h5py.File(bankF[int(file_params[file1, 0]]), "r")
     weight = (1 - weight_P) * (1 - weight_B)
     # get stuff
 
@@ -105,7 +105,7 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
 
     
     file1 = np.all(np.column_stack((file_params[:, 1]==Bmin, file_params[:,2]==Pmax)), axis=1)
-    fileL = h5py.File(bankF[file_params[file1, 0]], "r")
+    fileL = h5py.File(bankF[int(file_params[file1, 0]]), "r")
     weight = (1 - weight_P) * weight_B
     # get stuff
 
@@ -117,7 +117,7 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     output.append([ergs, photons * weight])
 
     file1 = np.all(np.column_stack((file_params[:, 1]==Bmax, file_params[:,2]==Pmin)), axis=1)
-    fileL = h5py.File(bankF[file_params[file1, 0]], "r")
+    fileL = h5py.File(bankF[int(file_params[file1, 0]]), "r")
     weight = weight_P * (1 - weight_B)
     # get stuff
 
