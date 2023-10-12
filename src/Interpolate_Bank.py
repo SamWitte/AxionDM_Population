@@ -139,7 +139,7 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     
     output = np.asarray(output)
     
-    output[:,0] += dopplerS
+    output[:,0] *= (1 + dopplerS)
     output[:, 1] *= (density_rescale / 0.45)
     # add v0_rescale
     
