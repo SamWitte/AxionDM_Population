@@ -30,6 +30,7 @@ def run_population(MassA, file_in, dir_out, file_out, NS_population='Young'):
         out = Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=(vNS/2.998e5), density_rescale=rho_DM, v0_rescale=vDM)
         if np.all(out == 0):
             continue
+
         out[:, 1] *= (1.60e-12) / dist_earth**2 * (3.24e-22)**2 / 1e-23 # Jy-Hz (ie divide by bandwidth in Hz to get flux density)
         if cnt == 0:
             full_radio = out
