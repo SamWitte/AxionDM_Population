@@ -4,9 +4,10 @@ from Interpolate_Bank import *
 
 file_in = np.loadtxt("test.txt")
 MassA = 1.0e-5
+dir_out = "population_output"
+file_out = "Pop_test.txt"
 
-
-def run_population(MassA, file_in, NS_population='Young'):
+def run_population(MassA, file_in, dir_out, file_out, NS_population='Young'):
     full_radio = None
 
     for i in range(len(file_in)):
@@ -33,8 +34,11 @@ def run_population(MassA, file_in, NS_population='Young'):
             full_radio = out
         else:
             full_radio = np.vstack((full_radio, out))
-
-    return full_radio
+    
+    if not os.path.isdir(dir_tag):
+        os.mkdir(dir_tag)
+    np.savetxt(dir_tag + "/" + file_out, full_radio)
+    return
 
 
 def nNS_dist(r): # normalized
@@ -96,4 +100,4 @@ def v0_DM(r):
 
 
 
-run_population(MassA, file_in, NS_population='Young')
+run_population(MassA, file_in, dir_out, file_out, NS_population='Young')
