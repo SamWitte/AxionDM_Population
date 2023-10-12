@@ -75,7 +75,7 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
         
     
     
-    if check_conversion(MassA, Bmin, Pmax, thetaM) == 0:
+    # if check_conversion(MassA, Bmin, Pmax, thetaM) == 0:
 
     # find each file to interpolate
     file1 = np.all(np.column_stack((file_params[:, 1]==Bmin, file_params[:,2]==Pmin)), axis=1)
