@@ -19,9 +19,9 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     ##### Assumes rectangular grid!
 
 
-    MassA = "Ma_{:.3e}".format(MassA)
-    Gagg = "AxionG_{:.1e}".format(gagg)
-    bankF = glob.glob("RayTracing/results/*"+MassA+"*"+Gagg+"*")
+    MassA_tag = "Ma_{:.3e}".format(MassA)
+    Gagg_tag = "AxionG_{:.1e}".format(gagg)
+    bankF = glob.glob("RayTracing/results/*"+MassA_tag+"*"+Gagg_tag+"*")
     
     # ASSUMING THETA_M = 0.0
     if check_conversion(MassA, Bv, Pv, 0.0) == 0:
