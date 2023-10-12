@@ -35,7 +35,7 @@ def run_population(MassA, file_in, dir_out, file_out, NS_population='Young'):
             full_radio = out
         else:
             full_radio = np.vstack((full_radio, out))
-    
+    print(full_radio)
     if not os.path.isdir(dir_out):
         os.mkdir(dir_out)
     np.savetxt(dir_out + "/" + file_out, full_radio)
