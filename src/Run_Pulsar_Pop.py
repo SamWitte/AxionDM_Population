@@ -2,8 +2,8 @@ import numpy as np
 import os
 from Interpolate_Bank import *
 
-file_in = np.loadtxt("test.txt")
-MassA = 1.0e-5
+file_in = np.loadtxt("Pop_Test_In.txt")
+MassA = 5.79e-6
 dir_out = "population_output"
 file_out = "Pop_test.txt"
 
