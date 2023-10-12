@@ -23,7 +23,7 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     MassA_tag = MassA_tag_temp[:-2] + MassA_tag_temp[-1]
     Gagg_tag = "AxionG_{:.1e}".format(gagg)
     bankF = glob.glob("RayTracing/results/*"+MassA_tag+"*"+Gagg_tag+"*")
-    print(bankF)
+    
     # ASSUMING THETA_M = 0.0
     if check_conversion(MassA, Bv, Pv, 0.0) == 0:
         print("Not converting... ")
@@ -47,12 +47,12 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     Blist = np.sort(np.unique(file_params[:,1]))
     Plist = np.sort(np.unique(file_params[:,2]))
 
-    argFlip_B = np.where(np.diff(np.sign(Blist - Bv)) != 0.0)
+    argFlip_B = np.where(np.diff(np.sign(Blist - Bv)) != 0.0)[0]
     Bmin = Blist[argFlip_B]
     Bmax = Blist[argFlip_B + 1]
     weight_B = (np.log10(Bmax) - np.log10(Bv)) / (np.log10(Bmax) - np.log10(Bmin))
 
-    argFlip_P = np.where(np.diff(np.sign(Plist - Pv)) != 0.0)
+    argFlip_P = np.where(np.diff(np.sign(Plist - Pv)) != 0.0)[0]
     Pmin = Plist[argFlip_P]
     Pmax = Plist[argFlip_P + 1]
     weight_P = (Pmax - Pv) / (Pmax - Pmin)
