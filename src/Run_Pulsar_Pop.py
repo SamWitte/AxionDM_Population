@@ -12,7 +12,7 @@ def run_population(MassA, file_in, dir_out, file_out, NS_population='Young'):
 
     for i in range(len(file_in)):
         # Desired File format
-        # indx, B0, P0, Theta_M
+        # indx, B0, P0, Theta_View
         ThetaV = file_in[i, 3]
         Bv = file_in[i, 1]
         Pv = file_in[i, 2]
@@ -30,7 +30,7 @@ def run_population(MassA, file_in, dir_out, file_out, NS_population='Young'):
         out = Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=(vNS/2.998e5), density_rescale=rho_DM, v0_rescale=vDM)
         
         out[:, 1] *= (1.60e-12) / dist_earth**2 * (3.24e-22)**2 / 1e-23 # Jy-Hz (ie divide by bandwidth in Hz to get flux density)
-        if full_radio = None:
+        if full_radio == None:
             full_radio = out
         else:
             full_radio = np.vstack((full_radio, out))
