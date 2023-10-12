@@ -86,8 +86,8 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     ThetaVals = fileL["thetaX_final"][:]
     rates = fileL["weights"][:]
     ergs = fileL["erg_loc"][:]
-    rates_small = theta_cut(rates, ThetaVals, thetaV, eps=eps_theta)
-    photons = np.sum(rates_small) / ( np.sin(thetaV) * 2 * np.sin(eps_theta)) / Pv  # eV / s
+    rates_small = theta_cut(rates, ThetaVals, ThetaV, eps=eps_theta)
+    photons = np.sum(rates_small) / ( np.sin(ThetaV) * 2 * np.sin(eps_theta)) / Pv  # eV / s
     output.append([ergs, photons * weight])
 
     file1 = np.all(np.column_stack((file_params[:, 1]==Bmax, file_params[:,2]==Pmax)), axis=1)
@@ -98,8 +98,8 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     ThetaVals = fileL["thetaX_final"][:]
     rates = fileL["weights"][:]
     ergs = fileL["erg_loc"][:]
-    rates_small = theta_cut(rates, ThetaVals, thetaV, eps=eps_theta)
-    photons = np.sum(rates_small) / ( np.sin(thetaV) * 2 * np.sin(eps_theta)) / Pv  # eV / s
+    rates_small = theta_cut(rates, ThetaVals, ThetaV, eps=eps_theta)
+    photons = np.sum(rates_small) / ( np.sin(ThetaV) * 2 * np.sin(eps_theta)) / Pv  # eV / s
     output.append([ergs, photons * weight])
 
 
@@ -112,8 +112,8 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     ThetaVals = fileL["thetaX_final"][:]
     rates = fileL["weights"][:]
     ergs = fileL["erg_loc"][:]
-    rates_small = theta_cut(rates, ThetaVals, thetaV, eps=eps_theta)
-    photons = np.sum(rates_small) / ( np.sin(thetaV) * 2 * np.sin(eps_theta)) / Pv  # eV / s
+    rates_small = theta_cut(rates, ThetaVals, ThetaV, eps=eps_theta)
+    photons = np.sum(rates_small) / ( np.sin(ThetaV) * 2 * np.sin(eps_theta)) / Pv  # eV / s
     output.append([ergs, photons * weight])
 
     file1 = np.all(np.column_stack((file_params[:, 1]==Bmax, file_params[:,2]==Pmin)), axis=1)
@@ -124,8 +124,8 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     ThetaVals = fileL["thetaX_final"][:]
     rates = fileL["weights"][:]
     ergs = fileL["erg_loc"][:]
-    rates_small = theta_cut(rates, ThetaVals, thetaV, eps=eps_theta)
-    photons = np.sum(rates_small) / ( np.sin(thetaV) * 2 * np.sin(eps_theta)) / Pv  # eV / s
+    rates_small = theta_cut(rates, ThetaVals, ThetaV, eps=eps_theta)
+    photons = np.sum(rates_small) / ( np.sin(ThetaV) * 2 * np.sin(eps_theta)) / Pv  # eV / s
     output.append([ergs, photons * weight])
 
     output = np.asarray(output)
