@@ -9,6 +9,7 @@ file_out = "Pop_test.txt"
 
 def run_population(MassA, file_in, dir_out, file_out, NS_population='Young'):
     full_radio = None
+    pulsar_params = []
     cnt = 0
     for i in range(len(file_in)):
         # Desired File format
@@ -34,9 +35,11 @@ def run_population(MassA, file_in, dir_out, file_out, NS_population='Young'):
             continue
         out[:, 1] *= (1.60e-12) / dist_earth**2 * (3.24e-22)**2 / 1e-23 # Jy-Hz (ie divide by bandwidth in Hz to get flux density)
         if cnt == 0:
-            full_radio = out
+            locNS_full = np.ones((len(out[:,0]) ,3)) * locNS
+            full_radio = np.column_stack((locNS_full, out))
         else:
-            full_radio = np.vstack((full_radio, out))
+            locNS_full = np.ones((len(out[:,0]) ,3)) * locNS
+            full_radio = np.vstack((full_radio, np.column_stack((locNS_full, out))))
         cnt += 1
     if not os.path.isdir(dir_out):
         os.mkdir(dir_out)
