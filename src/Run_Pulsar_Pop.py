@@ -28,7 +28,7 @@ def run_population(MassA, file_in, dir_out, file_out, NS_population='Young'):
         dist_earth = np.sqrt(np.sum((xE - locNS)**2))
         
         dop_S = (vNS/2.998e5) * np.sin(sample_theta()) * np.sin(np.random.rand() * 2*np.pi)
-        
+        print(vNS, "\t", dop_S)
         out = Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=dop_S, density_rescale=rho_DM, v0_rescale=vDM)
         if np.all(out == 0):
             continue

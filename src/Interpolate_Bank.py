@@ -1,7 +1,7 @@
 import numpy as np
 import glob
 import h5py
-
+from scipy.special import erf, erfinv
 
 def check_conversion(MassA, B, P, thetaM):
     ne_max = 2 * (2*np.pi / P) * (B * 1.95e-2) / 0.3 * 6.58e-16
@@ -138,8 +138,11 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     
     
     output = np.asarray(output)
-    
-    output[:,0] *= (1 + dopplerS)
+    #
+    erg_preD = MassA
+    vel_samp = np.sum(v0_rescale * erfinv(np.random.rand(len(output[:,0]), 3)), axis=1) / 2.998e5
+    erg_preD *= (1+vel_samp**2)
+    output[:,0] = erg_preD * (1 + dopplerS)
     output[:, 1] *= (density_rescale / 0.45)
     output[:, 1] *= (220.0 / v0_rescale)
     # add v0_rescale
