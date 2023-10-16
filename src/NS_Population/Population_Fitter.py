@@ -13,7 +13,12 @@ import torch
 import normflows as nf
 from matplotlib import pyplot as plt
 from tqdm import tqdm
+import emcee
 from core_test import NormalizingFlow_2
+import logging;
+import corner
+logging.disable(logging.WARNING)
+
 warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
 warnings.simplefilter('ignore', category=NumbaPendingDeprecationWarning)
 #################
@@ -168,17 +173,18 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
     
     for i in range(len(ages)):
     
-        if i % 1e4 == 0:
-            print("Currently at ", i, " of ", num_pulsars)
+#        if i % 1e4 == 0:
+#            print("Currently at ", i, " of ", num_pulsars)
         # sample
         Theta_in = draw_chi()
-        if pulsar_data == None:
+        
+        if type(pulsar_data) == type(None):
             B0 = draw_Bfield_lognorm()
             P0 = draw_period_norm()
         else:
             B0 = pulsar_data[i, 0]
             P0 = pulsar_data[i, 1]
-
+        
         # evolve
         Bf, Pf, ThetaF, Pdot = evolve_pulsar(B0, P0, Theta_in, ages[i], beta=beta, tau_Ohm=tau_Ohm)
         # print(B0, Bf, P0, Pf, Theta_in, ThetaF)
@@ -229,13 +235,77 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
             s_den1GHz = 1.0
     
         #final_list.append([Bf, Pf, Pdot, ThetaF, dist_earth, s_den1GHz, DM.value, tau_sc.value, xfin[0], xfin[1], xfin[2]])
-        file_list.append([Pf, Pdot])
+        final_list.append([Pf, Pdot])
         
     return np.asarray(final_list)
 
 
-def mcmc_func_minimize():
+def mcmc_func_minimize(real_samples, max_T=1e7):
+
+    def lnprior(theta):
+        mu_P, mu_B, sig_P, sig_B, cov_PB = theta
+        if 0.0 < sig_P < 10.0 and 0.0 < sig_B < 10.0 and 0.0 < cov_PB < 10.0:
+            return 0.0
+        return -np.inf
     
+    def likelihood_func(theta, Nsamps, real_samples, max_T):
+        
+        lp = lnprior(theta)
+        if not np.isfinite(lp):
+            return -np.inf
+        # sample points
+        mu_P, mu_B, sig_P, sig_B, cov_PB = theta
+        mean = [mu_P, mu_B]
+        cov = [[sig_P, cov_PB], [cov_PB, sig_B]]
+        x, y = np.random.multivariate_normal(mean, cov, Nsamps).T
+        P_in = np.exp(x)
+        B_in = np.exp(y)
+        data_in = np.column_stack((B_in, P_in))
+        
+        ages = np.random.randint(0, int(max_T), len(B_in))
+        # run forward model
+        out_pop = simulate_pop(Nsamps, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=0.1, pulsar_data=data_in)
+        P_out = out_pop[:, 0]
+        Pdot_out = out_pop[:, 1]
+        
+        Pdotrange = np.logspace(-23, -9, 50)
+        Prange = np.linspace(0.01, 20, 50)
+        n_sim = len(P_out)
+        n_dat = len(real_samples[:,1])
+        # print(np.min(Pdot_out), np.max(Pdot_out), np.min(P_out), np.max(P_out))
+        cnt = 0
+        log_q = 0.0
+        for i in range(len(Pdotrange)):
+            for j in range(len(Prange)):
+                cond1 = Pdot_out < Pdotrange[i]
+                cond2 = P_out < Prange[j]
+                
+                cdf_1 = np.sum(np.all( np.column_stack((cond1, cond2)), axis=1)) / n_sim
+                
+                cond1_d = real_samples[:,1] < Pdotrange[i]
+                cond2_d = real_samples[:,0] < Prange[j]
+                cdf_2 = np.sum(np.all( np.column_stack((cond1_d, cond2_d)), axis=1)) / n_dat
+                
+                log_q += (cdf_1 - cdf_2)**2
+        print("log_q", log_q)
+        return log_q
+
+
+    ndim, nwalkers = 5, 100
+    # params: mu_P, mu_B, sig_P, sig_B, cov_PB
+    central_v = np.array([np.log(0.3), np.log(10**12.95), 0.1, 0.4, 0.0])
+    pos = [central_v + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+
+    Nsamples=5000
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func, args=[Nsamples, real_samples, max_T])
+    sampler.run_mcmc(pos, 5000, progress=True)
+    
+    burn_in = 100
+    samples = sampler.chain[:, burn_in:, :].reshape((-1, ndim))
+    
+    
+    fig = corner.corner(samples, labels=[r"$\log_{\mu_P}$", r"$\log_{\mu_B}$", r"$\log_{\sigma_p}$", r"$\log_{\sigma_B}$", r"$\log_{\sigma_BP}$"])
+    fig.savefig("triangle_TEST.png")
 
     return
  
@@ -245,14 +315,14 @@ def train_nf(true_pop, tau_ohmic=1e7):
     
     base = nf.distributions.DiagGaussian(2)
     # base = nf.distributions.UniformGaussian(2, [1], torch.tensor([1., 20.0]))
-    LR = 1e-5
+    LR = 1e-4
     
     num_layers = 32
     flows = []
     for i in range(num_layers):
         # Neural network with two hidden layers having 64 units each
         # Last layer is initialized by zeros making training more stable
-        param_map = nf.nets.MLP([1, 64, 64, 2], init_zeros=True)
+        param_map = nf.nets.MLP([1, 64, 64, 2], init_zeros=False)
         # Add flow layer
         flows.append(nf.flows.AffineCouplingBlock(param_map))
         # Swap dimensions
@@ -273,23 +343,24 @@ def train_nf(true_pop, tau_ohmic=1e7):
     
     # Train model
     max_iter = 1000
-    num_samples = 20000
+    num_samples = 10000
     num_samples_pop = 1500
-    show_iter = 200
+    show_iter = 20
 
     torch.set_grad_enabled(True)
     loss_hist = np.array([])
 
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, max_iter)
-
+    optimizer.zero_grad()
     for it in tqdm(range(max_iter)):
-        optimizer.zero_grad()
+        
         
         # Compute loss
         # x needs to be batch from NS pop.
         indx_ns = np.random.choice(range(1, len(true_pop[:,0])), num_samples_pop, replace=False)
-        loss = model.custom_ns_population(num_samples, true_pop[indx_ns], max_T=tau_ohmic*5, tau_Ohm=tau_ohmic)
+        #loss = model.custom_ns_population(num_samples, true_pop[indx_ns], max_T=tau_ohmic*5, tau_Ohm=tau_ohmic)
+        loss = model.custom_ns_population(num_samples, true_pop, max_T=tau_ohmic*5, tau_Ohm=tau_ohmic)
         loss.requires_grad = True
         # Do backprop and optimizer step
         print(loss)
@@ -323,4 +394,5 @@ def train_nf(true_pop, tau_ohmic=1e7):
     return
 
 
-train_nf(true_pop)
+# train_nf(true_pop)
+mcmc_func_minimize(true_pop)
