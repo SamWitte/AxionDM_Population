@@ -343,15 +343,9 @@ def train_nf(true_pop, tau_ohmic=1e7):
     
     # Train model
     max_iter = 1000
-<<<<<<< HEAD
     num_samples = 50000
     num_samples_pop = 2000
     show_iter = 200
-=======
-    num_samples = 10000
-    num_samples_pop = 1500
-    show_iter = 20
->>>>>>> 3adb8e3132fa63db856a053bf0324d3ead11ccf7
 
     torch.set_grad_enabled(True)
     loss_hist = np.array([])
