@@ -13,6 +13,7 @@ import torch
 import normflows as nf
 from matplotlib import pyplot as plt
 from tqdm import tqdm
+from core_test import NormalizingFlow_2
 warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
 warnings.simplefilter('ignore', category=NumbaPendingDeprecationWarning)
 #################
@@ -263,7 +264,7 @@ def train_nf(true_pop, tau_ohmic=1e7):
 #                                                                               tail_bound=torch.tensor([5., np.pi]),
 #                                                                               permute_mask=True)]
 
-    model = nf.NormalizingFlow(base, flows)
+    model = NormalizingFlow_2(base, flows)
 
     # Move model on GPU if available
     enable_cuda = True
