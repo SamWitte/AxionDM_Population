@@ -245,7 +245,7 @@ def train_nf(true_pop, tau_ohmic=1e7):
     
     base = nf.distributions.DiagGaussian(2)
     # base = nf.distributions.UniformGaussian(2, [1], torch.tensor([1., 20.0]))
-    LR = 1e-5
+    LR = 1e-2
     
     num_layers = 32
     flows = []
@@ -273,8 +273,8 @@ def train_nf(true_pop, tau_ohmic=1e7):
     
     # Train model
     max_iter = 1000
-    num_samples = 20000
-    num_samples_pop = 1500
+    num_samples = 50000
+    num_samples_pop = 2000
     show_iter = 200
 
     torch.set_grad_enabled(True)
