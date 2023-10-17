@@ -297,7 +297,7 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
     pos = [central_v + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
 
     Nsamples=5000
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func, args=[Nsamples, real_samples, max_T])
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func, args=(Nsamples, real_samples, max_T, ))
     sampler.run_mcmc(pos, 5000, progress=True)
     
     burn_in = 100
