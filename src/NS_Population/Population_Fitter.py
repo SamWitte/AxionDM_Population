@@ -255,8 +255,8 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
             return -np.inf
         # sample points
         mu_P, mu_B, sig_P, sig_B, cov_PB = theta
-        mean = [mu_P, mu_B]
-        cov = [[sig_P, cov_PB], [cov_PB, sig_B]]
+        mean = np.array([mu_P, mu_B])
+        cov = np.array([[sig_P, cov_PB], [cov_PB, sig_B]])
         x, y = np.random.multivariate_normal(mean, cov, Nsamps).T
         P_in = np.exp(x)
         B_in = np.exp(y)
@@ -295,7 +295,7 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
     # params: mu_P, mu_B, sig_P, sig_B, cov_PB
     central_v = np.array([np.log(0.3), np.log(10**12.95), 0.1, 0.4, 0.0])
     pos = [central_v + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
-
+    pos = np.asarray(pos)
     Nsamples=5000
     sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func, args=(Nsamples, real_samples, max_T, ))
     sampler.run_mcmc(pos, 5000, progress=True)
