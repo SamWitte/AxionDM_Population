@@ -17,6 +17,8 @@ import emcee
 from core_test import NormalizingFlow_2
 import logging;
 import corner
+from multiprocessing import Pool
+
 logging.disable(logging.WARNING)
 
 warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
@@ -51,7 +53,9 @@ tau_ohmic = 10.0e6 # yrs
 num_pulsars = NS_formationrate / 1e2 * max_T
 print("Estimated number of pulsars in formed in last {:.2e} years: {:.2e}".format(max_T, num_pulsars))
 
-N_samples = 1e5
+
+Nsamples=5000
+N_steps = 500
 
 
 
@@ -182,7 +186,7 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
             B0 = draw_Bfield_lognorm()
             P0 = draw_period_norm()
         else:
-            print("here 1 \n")
+            print("here 1")
             B0 = pulsar_data[i, 0]
             P0 = pulsar_data[i, 1]
         
@@ -195,13 +199,13 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
         if Bf <= Bdeath:
             # print("dead")
             continue
-        print("here 2 \n")
+        print("here 2")
         # get current location today
         xfin = sample_location(ages[i], diskH=0.5, diskR=10.0)
         if np.abs(xfin[2] > 0.5):
             # print("does not live in disk... ")
             continue
-        print("here 3 \n")
+        print("here 3")
         xE = np.array([0.0, 8.3, 0.0])
         xfin_shift = xfin - xE
        
@@ -211,7 +215,7 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
         GC_b = np.arcsin(xfin[2] / dist_earth)
         GC_l = np.arctan2(xfin_shift[0], xfin_shift[1])
         DM, tau_sc = pygedm.dist_to_dm(GC_l, GC_b, dist_earth * 1e3 * u.pc, method='ymw16')
-        print("here 4 \n")
+        print("here 4")
         if Bf < 4.4e13:
             # is it pointing toward us?
             if beaming_cut(Pf) == 0:
@@ -225,9 +229,9 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
             if (minF1 == 0):
                 # print("Too broad....")
                 continue
-            print("here 5 \n")
+            print("here 5")
             minF2 = min_flux_test2(Pf, DM.value, beta=2, tau=1.0e-2, DM0=60, DM1=7.5, G=0.64, Trec=21, d_freq=10e6, tobs=200, SN=10, Tsky=1.0)
-            print("here 6 \n")
+            print("here 6")
             # print("Flux stuff \t", s_den1GHz, minF1, minF2)
             if (s_den1GHz < minF2):
                 # print("Flux too low...")
@@ -242,58 +246,60 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
         
     return np.asarray(final_list)
 
+def lnprior(theta):
+    mu_P, mu_B, sig_P, sig_B, cov_PB = theta
+    if 0.0 < sig_P < 10.0 and 0.0 < sig_B < 10.0 and 0.0 < cov_PB < 10.0:
+        return 0.0
+    return -np.inf
 
+def likelihood_func(theta):
+    
+    lp = lnprior(theta)
+    if not np.isfinite(lp):
+        return -np.inf
+    # sample points
+    mu_P, mu_B, sig_P, sig_B, cov_PB = theta
+    mean = np.array([mu_P, mu_B])
+    cov = np.array([[sig_P, cov_PB], [cov_PB, sig_B]])
+    x, y = np.random.multivariate_normal(mean, cov, Nsamples).T
+    P_in = np.exp(x)
+    B_in = np.exp(y)
+    data_in = np.column_stack((B_in, P_in))
+    
+    ages = np.random.randint(0, int(max_T), len(B_in))
+    # run forward model
+    out_pop = simulate_pop(Nsamples, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=0.1, pulsar_data=data_in)
+    if len(out_pop) == 0:
+        return -np.inf
+    P_out = out_pop[:, 0]
+    Pdot_out = out_pop[:, 1]
+    
+    Pdotrange = np.logspace(-23, -9, 50)
+    Prange = np.linspace(0.01, 20, 50)
+    n_sim = len(P_out)
+    n_dat = len(real_samples[:,1])
+    # print(np.min(Pdot_out), np.max(Pdot_out), np.min(P_out), np.max(P_out))
+    cnt = 0
+    log_q = 0.0
+    for i in range(len(Pdotrange)):
+        for j in range(len(Prange)):
+            cond1 = Pdot_out < Pdotrange[i]
+            cond2 = P_out < Prange[j]
+            
+            cdf_1 = np.sum(np.all( np.column_stack((cond1, cond2)), axis=1)) / n_sim
+            
+            cond1_d = real_samples[:,1] < Pdotrange[i]
+            cond2_d = real_samples[:,0] < Prange[j]
+            cdf_2 = np.sum(np.all( np.column_stack((cond1_d, cond2_d)), axis=1)) / n_dat
+            
+            log_q += (cdf_1 - cdf_2)**2
+    print("log_q", log_q)
+    return -log_q
+    
 def mcmc_func_minimize(real_samples, max_T=1e7):
 
-    def lnprior(theta):
-        mu_P, mu_B, sig_P, sig_B, cov_PB = theta
-        if 0.0 < sig_P < 10.0 and 0.0 < sig_B < 10.0 and 0.0 < cov_PB < 10.0:
-            return 0.0
-        return -np.inf
+        
     
-    def likelihood_func(theta, Nsamps, real_samples, max_T):
-        
-        lp = lnprior(theta)
-        if not np.isfinite(lp):
-            return -np.inf
-        # sample points
-        mu_P, mu_B, sig_P, sig_B, cov_PB = theta
-        mean = np.array([mu_P, mu_B])
-        cov = np.array([[sig_P, cov_PB], [cov_PB, sig_B]])
-        x, y = np.random.multivariate_normal(mean, cov, Nsamps).T
-        P_in = np.exp(x)
-        B_in = np.exp(y)
-        data_in = np.column_stack((B_in, P_in))
-        
-        ages = np.random.randint(0, int(max_T), len(B_in))
-        # run forward model
-        out_pop = simulate_pop(Nsamps, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=0.1, pulsar_data=data_in)
-        if len(out_pop) == 0:
-            return -np.inf
-        P_out = out_pop[:, 0]
-        Pdot_out = out_pop[:, 1]
-        
-        Pdotrange = np.logspace(-23, -9, 50)
-        Prange = np.linspace(0.01, 20, 50)
-        n_sim = len(P_out)
-        n_dat = len(real_samples[:,1])
-        # print(np.min(Pdot_out), np.max(Pdot_out), np.min(P_out), np.max(P_out))
-        cnt = 0
-        log_q = 0.0
-        for i in range(len(Pdotrange)):
-            for j in range(len(Prange)):
-                cond1 = Pdot_out < Pdotrange[i]
-                cond2 = P_out < Prange[j]
-                
-                cdf_1 = np.sum(np.all( np.column_stack((cond1, cond2)), axis=1)) / n_sim
-                
-                cond1_d = real_samples[:,1] < Pdotrange[i]
-                cond2_d = real_samples[:,0] < Prange[j]
-                cdf_2 = np.sum(np.all( np.column_stack((cond1_d, cond2_d)), axis=1)) / n_dat
-                
-                log_q += (cdf_1 - cdf_2)**2
-        print("log_q", log_q)
-        return -log_q
 
 
     ndim, nwalkers = 5, 10
@@ -301,10 +307,20 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
     central_v = np.array([np.log(0.3), np.log(10**12.95), 0.1, 0.4, 0.0])
     pos = [central_v + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
     pos = np.asarray(pos)
+<<<<<<< HEAD
     Nsamples=1000
 
     sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func, args=(Nsamples, real_samples, max_T, ))
     sampler.run_mcmc(pos, 500, progress=True)
+=======
+    
+    
+    #with Pool() as pool:
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func)
+    sampler.run_mcmc(pos, N_steps, progress=True)
+    
+    
+>>>>>>> e11f061ecbe46ea5e438e8cf871145e8ed5c11b7
     
     burn_in = 100
     samples = sampler.chain[:, burn_in:, :].reshape((-1, ndim))
