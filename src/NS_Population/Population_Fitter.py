@@ -291,12 +291,12 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
         return log_q
 
 
-    ndim, nwalkers = 5, 100
+    ndim, nwalkers = 5, 10
     # params: mu_P, mu_B, sig_P, sig_B, cov_PB
     central_v = np.array([np.log(0.3), np.log(10**12.95), 0.1, 0.4, 0.0])
     pos = [central_v + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
     pos = np.asarray(pos)
-    Nsamples=5000
+    Nsamples=1000
     sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func, args=(Nsamples, real_samples, max_T, ))
     sampler.run_mcmc(pos, 5000, progress=True)
     
