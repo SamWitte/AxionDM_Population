@@ -255,8 +255,8 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
             return -np.inf
         # sample points
         mu_P, mu_B, sig_P, sig_B, cov_PB = theta
-        mean = [mu_P, mu_B]
-        cov = [[sig_P, cov_PB], [cov_PB, sig_B]]
+        mean = np.array([mu_P, mu_B])
+        cov = np.array([[sig_P, cov_PB], [cov_PB, sig_B]])
         x, y = np.random.multivariate_normal(mean, cov, Nsamps).T
         P_in = np.exp(x)
         B_in = np.exp(y)
@@ -265,6 +265,8 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
         ages = np.random.randint(0, int(max_T), len(B_in))
         # run forward model
         out_pop = simulate_pop(Nsamps, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=0.1, pulsar_data=data_in)
+        if len(out_pop) == 0:
+            return -np.inf
         P_out = out_pop[:, 0]
         Pdot_out = out_pop[:, 1]
         
@@ -288,7 +290,7 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
                 
                 log_q += (cdf_1 - cdf_2)**2
         print("log_q", log_q)
-        return log_q
+        return -log_q
 
 
     ndim, nwalkers = 5, 10
@@ -297,6 +299,8 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
     pos = [central_v + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
 
     Nsamples=500
+    pos = np.asarray(pos)
+    
     sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func, args=(Nsamples, real_samples, max_T, ))
     sampler.run_mcmc(pos, 5000, progress=True)
     
