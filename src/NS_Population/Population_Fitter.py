@@ -182,6 +182,7 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
             B0 = draw_Bfield_lognorm()
             P0 = draw_period_norm()
         else:
+            print("here 1 \n")
             B0 = pulsar_data[i, 0]
             P0 = pulsar_data[i, 1]
         
@@ -194,13 +195,13 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
         if Bf <= Bdeath:
             # print("dead")
             continue
-        
+        print("here 2 \n")
         # get current location today
         xfin = sample_location(ages[i], diskH=0.5, diskR=10.0)
         if np.abs(xfin[2] > 0.5):
             # print("does not live in disk... ")
             continue
-        
+        print("here 3 \n")
         xE = np.array([0.0, 8.3, 0.0])
         xfin_shift = xfin - xE
        
@@ -208,9 +209,9 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
         # print("Distance \t ", dist_earth)
         # compute DM and tau based on location
         GC_b = np.arcsin(xfin[2] / dist_earth)
-        GC_l = np.arctan2(xfin_shift[1], xfin_shift[2])
+        GC_l = np.arctan2(xfin_shift[0], xfin_shift[1])
         DM, tau_sc = pygedm.dist_to_dm(GC_l, GC_b, dist_earth * 1e3 * u.pc, method='ymw16')
-        
+        print("here 4 \n")
         if Bf < 4.4e13:
             # is it pointing toward us?
             if beaming_cut(Pf) == 0:
@@ -224,7 +225,9 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
             if (minF1 == 0):
                 # print("Too broad....")
                 continue
+            print("here 5 \n")
             minF2 = min_flux_test2(Pf, DM.value, beta=2, tau=1.0e-2, DM0=60, DM1=7.5, G=0.64, Trec=21, d_freq=10e6, tobs=200, SN=10, Tsky=1.0)
+            print("here 6 \n")
             # print("Flux stuff \t", s_den1GHz, minF1, minF2)
             if (s_den1GHz < minF2):
                 # print("Flux too low...")
