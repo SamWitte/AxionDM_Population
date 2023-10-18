@@ -54,8 +54,8 @@ num_pulsars = NS_formationrate / 1e2 * max_T
 print("Estimated number of pulsars in formed in last {:.2e} years: {:.2e}".format(max_T, num_pulsars))
 
 
-Nsamples=5000
-N_steps = 500
+Nsamples=1000
+N_steps = 300
 
 
 
@@ -307,20 +307,13 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
     central_v = np.array([np.log(0.3), np.log(10**12.95), 0.1, 0.4, 0.0])
     pos = [central_v + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
     pos = np.asarray(pos)
-<<<<<<< HEAD
-    Nsamples=1000
 
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func, args=(Nsamples, real_samples, max_T, ))
-    sampler.run_mcmc(pos, 500, progress=True)
-=======
     
     
     #with Pool() as pool:
     sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func)
     sampler.run_mcmc(pos, N_steps, progress=True)
     
-    
->>>>>>> e11f061ecbe46ea5e438e8cf871145e8ed5c11b7
     
     burn_in = 100
     samples = sampler.chain[:, burn_in:, :].reshape((-1, ndim))
