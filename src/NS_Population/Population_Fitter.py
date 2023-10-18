@@ -252,7 +252,7 @@ def lnprior(theta):
         return 0.0
     return -np.inf
 
-def likelihood_func(theta):
+def likelihood_func(theta, real_samples):
     
     lp = lnprior(theta)
     if not np.isfinite(lp):
@@ -298,9 +298,6 @@ def likelihood_func(theta):
     
 def mcmc_func_minimize(real_samples, max_T=1e7):
 
-        
-    
-
 
     ndim, nwalkers = 5, 100
     # params: mu_P, mu_B, sig_P, sig_B, cov_PB
@@ -310,7 +307,7 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
     
     
     #with Pool() as pool:
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func)
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func, args=(real_samples,))
     sampler.run_mcmc(pos, N_steps, progress=True)
     
     
