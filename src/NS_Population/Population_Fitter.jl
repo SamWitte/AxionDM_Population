@@ -25,7 +25,7 @@ Pmax=0.75
 Bmin=1e12
 Bmax=3e13
 
-sigP_min=0.05
+sigP_min=0.02
 sigP_max=0.4
 sigB_min=0.1
 sigB_max=1.2
