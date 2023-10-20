@@ -55,8 +55,13 @@ num_pulsars = NS_formationrate / 1e2 * max_T
 print("Estimated number of pulsars in formed in last {:.2e} years: {:.2e}".format(max_T, num_pulsars))
 
 
-Nsamples= 7000
-N_steps = 500
+
+
+
+
+Nsamples=1000
+N_steps = 300
+
 
 
 
@@ -307,17 +312,19 @@ def likelihood_func(theta, real_samples):
     
 def mcmc_func_minimize(real_samples, max_T=1e7):
 
-    ndim, nwalkers = 5, 100
+
+    ndim, nwalkers = 5, 10
+
     # params: mu_P, mu_B, sig_P, sig_B, cov_PB
     central_v = np.array([np.log(0.3), np.log(10**12.95), 0.1, 0.4, 0.0])
     pos = [central_v + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
     pos = np.asarray(pos)
+
     
     
     #with Pool() as pool:
     sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func, args=(real_samples,))
     sampler.run_mcmc(pos, N_steps, progress=True)
-    
     
     
     burn_in = 100
@@ -361,7 +368,7 @@ def train_nf(true_pop, tau_ohmic=1e7):
     base = nf.distributions.DiagGaussian(2)
     # base = nf.distributions.UniformGaussian(2, [1], torch.tensor([1., 20.0]))
     LR = 1e-4
-    
+
     num_layers = 32
     flows = []
     for i in range(num_layers):
@@ -388,9 +395,9 @@ def train_nf(true_pop, tau_ohmic=1e7):
     
     # Train model
     max_iter = 1000
-    num_samples = 10000
-    num_samples_pop = 1500
-    show_iter = 20
+    num_samples = 50000
+    num_samples_pop = 2000
+    show_iter = 200
 
     torch.set_grad_enabled(True)
     loss_hist = np.array([])
