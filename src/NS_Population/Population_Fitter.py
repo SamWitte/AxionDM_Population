@@ -2,7 +2,7 @@ import numpy as np
 from astropy import units as u
 import pygedm
 from scipy import stats
-from scipy.integrate import solve_ivp
+from scipy.integrate import solve_ivp, odeint
 import random
 from scipy.special import erfinv, erf
 from numba import jit
@@ -28,7 +28,7 @@ warnings.simplefilter('ignore', category=NumbaPendingDeprecationWarning)
 run_magnetars = False
 
 NS_formationrate = 2.0 # per century
-max_T = 100e6 # only simulate pulsars with ages < max_T
+
 
 filePulsars = np.loadtxt("psrcat_tar/store_out/Pulsar_Population.txt")
 fileMagnetars = np.loadtxt("psrcat_tar/store_out/Magnetar_Population.txt")
@@ -49,12 +49,13 @@ true_pop = true_pop[np.all(np.column_stack((B_true > B_min, B_true < B_max)), ax
 
 # ohmic decay timescale
 tau_ohmic = 10.0e6 # yrs
+max_T = 5 * tau_ohmic # only simulate pulsars with ages < max_T
 
 num_pulsars = NS_formationrate / 1e2 * max_T
 print("Estimated number of pulsars in formed in last {:.2e} years: {:.2e}".format(max_T, num_pulsars))
 
 
-Nsamples=5000
+Nsamples= 7000
 N_steps = 500
 
 
@@ -109,11 +110,12 @@ def min_flux_test2(P, DM, beta=2, tau=1.0e-2, DM0=60, DM1=7.5, G=0.64, Trec=21, 
     
     
 @jit()
-def evolve_pulsar(B0, P0, Theta_in, age, n_times=1e4, beta=6e-40, tau_Ohm=10.0e6):
+def evolve_pulsar(B0, P0, Theta_in, age, n_times=1e2, beta=6e-40, tau_Ohm=10.0e6):
     times = np.geomspace(1, age, int(n_times))
     y0=[np.log(B0), P0, Theta_in]
-    
-    sol_tot = solve_ivp(RHS, [times[0], times[-1]], y0, t_eval=times, args=(beta, tau_Ohm, ), max_step=500000.0)
+    sol_tot = solve_ivp(RHS, [times[0], times[-1]], y0, t_eval=times, args=(beta, tau_Ohm, ), max_step=500000.0, method='LSODA')
+    # y0 = np.column_stack((np.log(B0), P0, Theta_in))
+    # sol_tot = odeint(RHS, y0, times, args=(beta, tau_Ohm))
     sol = np.asarray(sol_tot.y)
     
     Bf = np.exp(sol[0, -1])
@@ -174,24 +176,24 @@ def draw_chi(Nsamps=1):
 def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=0.1, pulsar_data=None):
     final_list = []
     
-    
+    Theta_in = draw_chi(Nsamps=len(ages))
     for i in range(len(ages)):
     
 #        if i % 1e4 == 0:
 #            print("Currently at ", i, " of ", num_pulsars)
         # sample
-        Theta_in = draw_chi()
+        # Theta_in = draw_chi()
         
         if type(pulsar_data) == type(None):
             B0 = draw_Bfield_lognorm()
             P0 = draw_period_norm()
         else:
-            print("here 1")
+            # print("here 1")
             B0 = pulsar_data[i, 0]
             P0 = pulsar_data[i, 1]
         
         # evolve
-        Bf, Pf, ThetaF, Pdot = evolve_pulsar(B0, P0, Theta_in, ages[i], beta=beta, tau_Ohm=tau_Ohm)
+        Bf, Pf, ThetaF, Pdot = evolve_pulsar(B0, P0, Theta_in[i], ages[i], beta=beta, tau_Ohm=tau_Ohm)
         # print(B0, Bf, P0, Pf, Theta_in, ThetaF)
         
         # is dead?
@@ -199,13 +201,13 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
         if Bf <= Bdeath:
             # print("dead")
             continue
-        print("here 2")
+        # print("here 2")
         # get current location today
         xfin = sample_location(ages[i], diskH=0.5, diskR=10.0)
         if np.abs(xfin[2] > 0.5):
             # print("does not live in disk... ")
             continue
-        print("here 3")
+        # print("here 3")
         xE = np.array([0.0, 8.3, 0.0])
         xfin_shift = xfin - xE
        
@@ -215,7 +217,7 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
         GC_b = np.arcsin(xfin[2] / dist_earth)
         GC_l = np.arctan2(xfin_shift[0], xfin_shift[1])
         DM, tau_sc = pygedm.dist_to_dm(GC_l, GC_b, dist_earth * 1e3 * u.pc, method='ymw16')
-        print("here 4")
+        # print("here 4")
         if Bf < 4.4e13:
             # is it pointing toward us?
             if beaming_cut(Pf) == 0:
@@ -229,9 +231,9 @@ def simulate_pop(num_pulsars, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=
             if (minF1 == 0):
                 # print("Too broad....")
                 continue
-            print("here 5")
+            # print("here 5")
             minF2 = min_flux_test2(Pf, DM.value, beta=2, tau=1.0e-2, DM0=60, DM1=7.5, G=0.64, Trec=21, d_freq=10e6, tobs=200, SN=10, Tsky=1.0)
-            print("here 6")
+            # print("here 6")
             # print("Flux stuff \t", s_den1GHz, minF1, minF2)
             if (s_den1GHz < minF2):
                 # print("Flux too low...")
@@ -254,9 +256,9 @@ def lnprior(theta):
 
 def likelihood_func(theta, real_samples):
     
-    lp = lnprior(theta)
-    if not np.isfinite(lp):
-        return -np.inf
+    # lp = lnprior(theta)
+    # if not np.isfinite(lp):
+    #     return -np.inf
     # sample points
     mu_P, mu_B, sig_P, sig_B, cov_PB = theta
     mean = np.array([mu_P, mu_B])
@@ -264,23 +266,27 @@ def likelihood_func(theta, real_samples):
     x, y = np.random.multivariate_normal(mean, cov, Nsamples).T
     P_in = np.exp(x)
     B_in = np.exp(y)
+    print("Distributions P \t", np.mean(P_in), np.min(P_in), np.max(P_in))
+    print("Distributions B {:.2e}  {:.2e}  {:.2e}".format(np.mean(B_in), np.min(B_in), np.max(B_in)))
     data_in = np.column_stack((B_in, P_in))
     
     ages = np.random.randint(0, int(max_T), len(B_in))
     # run forward model
     out_pop = simulate_pop(Nsamples, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=0.1, pulsar_data=data_in)
     if len(out_pop) == 0:
+        print("None survived....")
         return -np.inf
     P_out = out_pop[:, 0]
     Pdot_out = out_pop[:, 1]
     
-    Pdotrange = np.logspace(-23, -9, 50)
-    Prange = np.linspace(0.01, 20, 50)
+    Pdotrange = np.logspace(-23, -9, 30)
+    Prange = np.logspace(np.log10(0.01), np.log10(20), 30)
     n_sim = len(P_out)
     n_dat = len(real_samples[:,1])
     # print(np.min(Pdot_out), np.max(Pdot_out), np.min(P_out), np.max(P_out))
     cnt = 0
-    log_q = 0.0
+    # log_q = 0.0
+    log_q = []
     for i in range(len(Pdotrange)):
         for j in range(len(Prange)):
             cond1 = Pdot_out < Pdotrange[i]
@@ -292,12 +298,14 @@ def likelihood_func(theta, real_samples):
             cond2_d = real_samples[:,0] < Prange[j]
             cdf_2 = np.sum(np.all( np.column_stack((cond1_d, cond2_d)), axis=1)) / n_dat
             
-            log_q += (cdf_1 - cdf_2)**2
-    print("log_q", log_q)
-    return -log_q
+            # log_q += (cdf_1 - cdf_2)**2
+            log_q.append(np.abs(cdf_1 - cdf_2))
+    log_qM = np.max(np.asarray(log_q))
+    print("log_q", log_qM)
+    return -log_qM
+    
     
 def mcmc_func_minimize(real_samples, max_T=1e7):
-
 
     ndim, nwalkers = 5, 100
     # params: mu_P, mu_B, sig_P, sig_B, cov_PB
@@ -320,6 +328,31 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
     fig.savefig("triangle_TEST.png")
 
     return
+ 
+ 
+def hard_scan(real_samples, max_T=1e7):
+
+    
+    # params: mu_P, mu_B, sig_P, sig_B, cov_PB
+    Pmu_scan = np.linspace(np.log(0.3), np.log(1.0), 5)
+    Bmu_scan = np.linspace(np.log(10**12.6), np.log(10**13.5), 5)
+    Psig_scan = np.linspace(0.1, 0.5, 5)
+    Bsig_scan = np.linspace(0.4, 1.0, 5)
+    
+   
+    qval_L = []
+    for i1 in range(len(Pmu_scan)):
+        for i2 in range(len(Bmu_scan)):
+            for i3 in range(len(Psig_scan)):
+                for i4 in range(len(Bsig_scan)):
+                    # theta = np.array([Pmu_scan[i1], Bmu_scan[i2], Psig_scan[i3], Bsig_scan[i4], 0.0])
+                    xx = 3
+                    theta = np.array([Pmu_scan[xx], Bmu_scan[xx], Psig_scan[xx], Bsig_scan[xx], 0.0])
+                    qval = likelihood_func(theta, real_samples)
+                    qval_L.append(qval_L)
+                    print(np.exp(Pmu_scan[i1]), np.exp(Bmu_scan[i2]), Psig_scan[i3], Bsig_scan[i4], qval)
+
+    return np.asarray(qval_L)
  
 
 
@@ -398,7 +431,7 @@ def train_nf(true_pop, tau_ohmic=1e7):
             # ax[0].hist(np.exp(z[:,0]), bins=20, histtype='step')
             # ax[0].hist(np.exp(z[:,0]), bins=20, histtype='step')
             # ax[1].hist((np.log(10**12.5) + z[:,1]) / 2.718281, bins=20, histtype='step')
-            plt.show()
+            # plt.show()
                 # Iterate scheduler
         scheduler.step()
 
@@ -407,4 +440,5 @@ def train_nf(true_pop, tau_ohmic=1e7):
 
 
 # train_nf(true_pop)
-mcmc_func_minimize(true_pop)
+# mcmc_func_minimize(true_pop)
+hard_scan(true_pop)
