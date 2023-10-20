@@ -128,7 +128,7 @@ function evolve_pulsar(B0, P0, Theta_in, age; n_times=1e2, beta=6e-40, tau_Ohm=1
     tspan = (1, age)
     saveat = (tspan[2] .- tspan[1]) ./ 10
     
-    prob = ODEProblem(RHS!, y0, tspan, Mvars, reltol=1e-5, abstol=1e-4)
+    prob = ODEProblem(RHS!, y0, tspan, Mvars, reltol=1e-6, abstol=1e-6)
     # sol = @suppress solve(prob, lsoda(), saveat=saveat)
     sol = solve(prob, Vern6(), saveat=saveat)
     
