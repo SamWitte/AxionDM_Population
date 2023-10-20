@@ -21,19 +21,20 @@ run_magnetars = false
 fileName = "Test_Run"
 
 Pmin=0.05
-Pmax=0.75
-Bmin=1e12
-Bmax=3e13
+Pmax=0.9
+Bmin=6e12
+Bmax=1e14
 
-sigP_min=0.02
-sigP_max=0.4
+
+sigP_min=0.05
+sigP_max=0.7
 sigB_min=0.1
 sigB_max=1.2
 
-Npts_P=5
-Npts_B=5
-NPts_Psig=5
-NPts_Bsig=5
+Npts_P=7
+Npts_B=7
+NPts_Psig=7
+NPts_Bsig=7
 
 tau_ohmic = 10.0e6  # yrs
 max_T = 5.0 * tau_ohmic
