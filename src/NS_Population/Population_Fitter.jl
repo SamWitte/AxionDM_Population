@@ -9,6 +9,8 @@ using Distributions
 using LSODA
 using StatsBase
 using Suppressor
+# using Flux
+# using SciMLSensitivity
 
 # pyimport_conda("astropy.units", "")
 # Load required Python libraries
@@ -16,14 +18,15 @@ u = pyimport("astropy.units")
 pygedm = pyimport("pygedm")
 
 
+Random.seed!(1235)
 
 run_magnetars = false
 fileName = "Test_Run"
 
 Pmin=0.05
 Pmax=0.9
-Bmin=6e12
-Bmax=1e14
+Bmin=1e12
+Bmax=3e13
 
 
 sigP_min=0.05
@@ -31,15 +34,15 @@ sigP_max=0.7
 sigB_min=0.1
 sigB_max=1.2
 
-Npts_P=7
-Npts_B=7
-NPts_Psig=7
-NPts_Bsig=7
+Npts_P=5
+Npts_B=5
+NPts_Psig=5
+NPts_Bsig=5
 
 tau_ohmic = 10.0e6  # yrs
 max_T = 5.0 * tau_ohmic
 
-Nsamples = 20000 # samples per point
+Nsamples = 200000 # samples per point
 
 
 
@@ -122,16 +125,17 @@ function min_flux_test2(P, DM; beta=2, tau=1.0e-2, DM0=60, DM1=7.5, G=0.64, Trec
 end
 
 function evolve_pulsar(B0, P0, Theta_in, age; n_times=1e2, beta=6e-40, tau_Ohm=10.0e6)
-    times = exp10.(range(0, stop=log10(age), length=Int(n_times)))
     
     y0 = [P0, mod(Theta_in, pi/2)]
     Mvars = [beta, tau_Ohm, B0]
     tspan = (1, age)
-    saveat = (tspan[2] .- tspan[1]) ./ 10
+    saveat = (tspan[2] .- tspan[1]) ./ n_times
     
-    prob = ODEProblem(RHS!, y0, tspan, Mvars, reltol=1e-6, abstol=1e-6)
+    prob = ODEProblem(RHS!, y0, tspan, Mvars, reltol=1e-4, abstol=1e-4)
     # sol = @suppress solve(prob, lsoda(), saveat=saveat)
-    sol = solve(prob, Vern6(), saveat=saveat)
+    # sol = solve(prob, Vern6(), saveat=saveat)
+    sol = solve(prob, Tsit5(), saveat=saveat)
+    # sol = solve(prob, Euler(), saveat=saveat, dt=5000.0)
     
     
     Bf = B0 .* exp.(- age ./ tau_Ohm);
@@ -151,9 +155,9 @@ function RHS!(du, u, Mvars, t)
     
     B = B0 .* exp.(- t ./ tau_Ohm);
     
-    if B < 1e9
-        return [0.0, 0.0, 0.0]
-    end
+    # if B < 1e9
+    #     return [0.0, 0.0, 0.0]
+    # end
     P = u[1]
     chi = mod(u[2], pi/2)
     
@@ -203,6 +207,21 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
             P0 = pulsar_data[i, 2]
         end
         
+        xfin = sample_location(ages[i], diskH=0.5, diskR=10.0)
+#        if abs(xfin[3]) > 0.5
+#            # print("z \t", xfin, " \n")
+#            continue
+#        end
+        xE = [0.0, 8.3, 0.0]
+        xfin_shift = xfin .- xE
+        dist_earth = sqrt.(sum(xfin_shift.^2))
+        
+        # practical cuts
+        if (dist_earth .> 6)&&(B0 .* exp.(ages[i] ./ tau_Ohm) .< 4.4e13)
+            continue
+        end
+    
+        
         Bf, Pf, ThetaF, Pdot = evolve_pulsar(B0, P0, Theta_in[i], ages[i], beta=beta, tau_Ohm=tau_Ohm)
         
         Bdeath = 0.34 * 1e12 * Pf.^2
@@ -210,14 +229,7 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
             # print("death? \n")
             continue
         end
-        xfin = sample_location(ages[i], diskH=0.5, diskR=10.0)
-        if abs(xfin[3]) > 0.5
-            # print("z \t", xfin, " \n")
-            continue
-        end
-        xE = [0.0, 8.3, 0.0]
-        xfin_shift = xfin .- xE
-        dist_earth = sqrt.(sum(xfin_shift.^2))
+
         GC_b = asin.(xfin[3] / dist_earth)
         GC_l = atan.(xfin_shift[1], xfin_shift[2])
         DM, tau_sc = pygedm.dist_to_dm(GC_l, GC_b, dist_earth * 1e3 * u.pc, method="ymw16")
@@ -261,13 +273,14 @@ function likelihood_func(theta, real_samples, rval; npts_cdf=100)
     ages = rand(0:max_T, length(B_in))
     
     out_pop = simulate_pop(Nsamples, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=0.1, pulsar_data=data_in)
-    Obs_pulsarN_L = length(out_pop[:,1]) ./ Nsamples .* num_pulsarsL
-    Obs_pulsarN_H = length(out_pop[:,1]) ./ Nsamples .* num_pulsarsH
-    
+    num_out = length(out_pop[:,1])
+    Obs_pulsarN_L = (num_out - 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsL
+    Obs_pulsarN_H = (num_out + 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsH
+    print(num_out, "\n")
     
     if (N_pulsars_tot .< Obs_pulsarN_L)||(N_pulsars_tot .> Obs_pulsarN_H)
         print("Pred Low, Pred High, Actual \t", Obs_pulsarN_L , "\t", Obs_pulsarN_H, "\t", N_pulsars_tot, "\n" )
-        return 1e-100
+        return 100, 1e-100
     end
     
     if isempty(out_pop)
@@ -276,25 +289,53 @@ function likelihood_func(theta, real_samples, rval; npts_cdf=100)
     else
         P_out = out_pop[:, 1]
         Pdot_out = out_pop[:, 2]
-        Pdotrange = exp10.(range(-23, stop=-9, length=npts_cdf))
         
-        Prange = exp10.(range(-2.5, stop=log10(20), length=npts_cdf))
         n_sim = length(P_out)
         n_dat = length(real_samples[:, 1])
         cnt = 0
         log_q = []
-        for i in 1:length(Pdotrange)
-            for j in 1:length(Prange)
-                cond1 = Pdot_out .< Pdotrange[i]
-                cond2 = P_out .< Prange[j]
-                cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
-                
-                cond1_d = real_samples[:, 2] .< Pdotrange[i]
-                cond2_d = real_samples[:, 1] .< Prange[j]
-                cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
-                
-                push!(log_q, abs(cdf_1 - cdf_2))
-            end
+        for i in 1:length(P_out)
+            
+            # Q1
+            cond1 = Pdot_out .< Pdot_out[i]
+            cond2 = P_out .< P_out[i]
+            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
+            
+            cond1_d = real_samples[:, 2] .< Pdot_out[i]
+            cond2_d = real_samples[:, 1] .< P_out[i]
+            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
+            push!(log_q, abs(cdf_1 - cdf_2))
+            
+            # Q2
+            cond1 = Pdot_out .< Pdot_out[i]
+            cond2 = P_out .> P_out[i]
+            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
+            
+            cond1_d = real_samples[:, 2] .< Pdot_out[i]
+            cond2_d = real_samples[:, 1] .> P_out[i]
+            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
+            push!(log_q, abs(cdf_1 - cdf_2))
+            
+            # Q3
+            cond1 = Pdot_out .> Pdot_out[i]
+            cond2 = P_out .< P_out[i]
+            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
+            
+            cond1_d = real_samples[:, 2] .> Pdot_out[i]
+            cond2_d = real_samples[:, 1] .< P_out[i]
+            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
+            push!(log_q, abs(cdf_1 - cdf_2))
+            
+            # Q4
+            cond1 = Pdot_out .> Pdot_out[i]
+            cond2 = P_out .> P_out[i]
+            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
+            
+            cond1_d = real_samples[:, 2] .> Pdot_out[i]
+            cond2_d = real_samples[:, 1] .> P_out[i]
+            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
+            push!(log_q, abs(cdf_1 - cdf_2))
+            
         end
         Dval = maximum(log_q)
         
@@ -303,14 +344,11 @@ function likelihood_func(theta, real_samples, rval; npts_cdf=100)
         
         Qval = 0.0
         for i in 1:10
-            Qval += (-1).^(i-1) .* exp.(-2 .* i.^2 .* lam.^2)
+            Qval += 2.0 .* (-1).^(i-1) .* exp.(-2 .* i.^2 .* lam)
         end
         
-        # println("log_q: ", log_qM, "\n")
-        # println("log_q: ", log_q, "\n")
-        # return -log_qM
         print("Dval \t", Dval, "  p(D > Dobs) \t", Qval, "\n")
-        return Qval
+        return Dval, Qval
     end
 end
 
@@ -329,8 +367,12 @@ function hard_scan(real_samples, rval; max_T=1e7, Pmin=0.05, Pmax=0.75, Bmin=1e1
                 for i4 in 1:length(Bsig_scan)
                     theta = [Pmu_scan[i1], Bmu_scan[i2], Psig_scan[i3], Bsig_scan[i4], 0.0]
                     print(theta, "\n")
-                    qval = likelihood_func(theta, real_samples, rval)
-                    push!(qval_L, [Pmu_scan[i1], Bmu_scan[i2], Psig_scan[i3], Bsig_scan[i4], 0.0, qval])
+                    Dval, qval = likelihood_func(theta, real_samples, rval)
+                    # outL = likelihood_func(theta, real_samples, rval)
+                    # print(outL, "\n")
+                    # Dval = outL[1]
+                    # qval = outL[2]
+                    push!(qval_L, [Pmu_scan[i1], Bmu_scan[i2], Psig_scan[i3], Bsig_scan[i4], 0.0, Dval, qval])
                     
                 end
             end
@@ -339,6 +381,28 @@ function hard_scan(real_samples, rval; max_T=1e7, Pmin=0.05, Pmax=0.75, Bmin=1e1
     return qval_L
 end
 
+function minimization_scan(real_samples, rval; max_T=1e7)
+    x_mean = [0.3, log10.(5e12), 0.2, 0.2, 0.0]
+    b = rand(5)
+    
+    function loss(xIn)
+        Dval, qval = likelihood_func(xIn .* b, real_samples, rval)
+        return Dval
+    end
+    
+    θ = Flux.Params(b)
+    grads = gradient(() -> loss(x_mean), θ)
+    η = 0.1 # Learning Rate
+    opt = Descent(η)
+    for p in (b)
+        Flux.Optimise.update!(opt, p, grads[p])
+        print(b, "\n")
+    end
+    
+    return qval_L
+end
+
+# minimization_scan(true_pop, rval; max_T=max_T)
 outputTable = hard_scan(true_pop, rval, max_T=max_T, Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig)
 
 writedlm(fileName*".dat", outputTable)
