@@ -255,7 +255,7 @@ function likelihood_func(theta, real_samples, rval; npts_cdf=100)
     out_samps = rand(dist, Nsamples)'
     
     
-    P_in = 10 .^(out_samps[:,1])
+    P_in = abs.(out_samps[:,1]) # 10 .^(out_samps[:,1])
     B_in = 10 .^(out_samps[:,2])
     data_in = hcat(B_in, P_in)
     ages = rand(0:max_T, length(B_in))
@@ -317,7 +317,8 @@ end
 
 
 function hard_scan(real_samples, rval; max_T=1e7, Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5)
-    Pmu_scan = range(log10.(Pmin), stop=log10.(Pmax), length=Npts_P)
+    # Pmu_scan = range(log10.(Pmin), stop=log10.(Pmax), length=Npts_P)
+    Pmu_scan = range(Pmin, stop=Pmax, length=Npts_P)
     Bmu_scan = range(log10.(Bmin), stop=log10.(Bmax), length=Npts_B)
     Psig_scan = range(sigP_min, stop=sigP_max, length=NPts_Psig)
     Bsig_scan = range(sigB_min, stop=sigB_max, length=NPts_Bsig)
