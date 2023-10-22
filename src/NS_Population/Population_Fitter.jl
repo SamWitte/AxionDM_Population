@@ -23,10 +23,11 @@ pygedm = pyimport("pygedm")
 
 
 Random.seed!(1235)
-run_analysis = false
+
+run_analysis = true
 fileName = "Test_Run"
 
-run_plot_data = true
+run_plot_data = false
 if run_plot_data
     fileName = "Sample_population"
 end
@@ -37,7 +38,7 @@ run_magnetars = false
 
 Pmin=0.05
 Pmax=0.9
-Bmin=1e12
+Bmin=7e12
 Bmax=3e13
 
 
@@ -54,29 +55,29 @@ NPts_Bsig=5
 tau_ohmic = 10.0e6  # yrs
 max_T = 5.0 * tau_ohmic
 
-Nsamples = 2000000 # samples per point
+Nsamples = 1000000 # samples per point
 
 filePulsars = open(readdlm,"psrcat_tar/store_out/Pulsar_Population.txt")
 fileMagnetars = open(readdlm, "psrcat_tar/store_out/Magnetar_Population.txt")
 
 if !run_magnetars
     true_pop = filePulsars[:, 2:3]
-    B_max = 4.4e13
-    B_min = 1e10
+    B_maxT = 1e15
+    B_minT = 1e10
 else
     true_pop = vcat(filePulsars[:, 2:3], fileMagnetars[:, 2:3])
-    B_max = 1e15
-    B_min = 1e10
+    B_maxT = 1e15
+    B_minT = 1e10
 end
 
-N_pulsars_tot = 3389 # this is ATNF number
-print("Number pulsars in sample \t", N_pulsars_tot, "\n")
+
 
 # cut data
 true_pop = true_pop[true_pop[:,2] .> 0, :]
 B_true = 1e12 .* sqrt.((true_pop[:, 2] ./ 1e-15) .* true_pop[:, 1])
-true_pop = true_pop[(B_true .> B_min) .& (B_true .< B_max), :]
-
+true_pop = true_pop[(B_true .> B_minT) .& (B_true .< B_maxT), :]
+N_pulsars_tot = length(true_pop[:, 1])  # this is ATNF number 3389
+print("Number pulsars in sample \t", N_pulsars_tot, "\n")
 
 
 rval = cor(true_pop[:,1], true_pop[:,2])
@@ -127,7 +128,7 @@ function min_flux_test1(P, tau_sc; threshold=0.1)
 end
 
 function min_flux_test2(P, DM; beta=2, tau=1.0e-2, DM0=60, DM1=7.5, G=0.64, Trec=21, d_freq=100e6, tobs=200, SN=10, Tsky=1.0)
-    #CHECK!
+
     wid = 0.05 * P
     Smin = SN * beta * (Trec + Tsky) / (G * sqrt.(2 * d_freq * tobs)) .* 1e3
     
@@ -148,7 +149,7 @@ function evolve_pulsar(B0, P0, Theta_in, age; n_times=1e2, beta=6e-40, tau_Ohm=1
     
     Bf = B0 .* exp.(- age ./ tau_Ohm);
     
-    prob = ODEProblem(RHS!, y0, tspan, Mvars, reltol=1e-4, abstol=1e-4)
+    prob = ODEProblem(RHS!, y0, tspan, Mvars, reltol=1e-4, abstol=1e-4, dtmin=1e-3, force_dtmin=true)
     
     condition_r(u,lnt,integrator) = u[2]
     function affect_r!(integrator)
@@ -219,11 +220,9 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
     # final_list = []
     Theta_in = draw_chi(length(ages))
     
-    temp_store = SharedArray{Float64}(length(ages), 7)
+    temp_store = zeros(length(ages), 7)
     
-    Threads.@threads for i in 1:length(ages)
-    # @distributed for i in 1:length(ages)
-        
+    for i in 1:length(ages)
         if typeof(pulsar_data) == Nothing
             B0 = draw_Bfield_lognorm()
             P0 = draw_period_norm()
@@ -252,12 +251,13 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
         GC_b = asin.(xfin[3] / dist_earth)
         GC_l = atan.(xfin_shift[1], xfin_shift[2])
         
-        temp_store[i, :] = [ages[i], Bf, Pf, Pdot, GC_b, GC_l, dist_earth]
+        temp_store[i, :] .= [ages[i], Bf, Pf, Pdot, GC_b, GC_l, dist_earth]
     end
     
     temp_store = temp_store[temp_store[:,1] .> 0.0, :]
     
-    final_list = SharedArray{Float64}(length(temp_store[:,1]), 2)
+    # final_list = SharedArray{Float64}(length(temp_store[:,1]), 2)
+    final_list = zeros(length(temp_store[:,1]), 2)
     for i in 1:length(temp_store[:,1])
         age, Bf, Pf, Pdot, GC_b, GC_l, dist_earth = temp_store[i, :]
 
@@ -272,7 +272,7 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
         if minF1 == 0
             continue
         end
-        minF2 = min_flux_test2(Pf, DM[1], beta=2, tau=1.0e-2, DM0=60, DM1=7.5, G=0.64, Trec=21, d_freq=10e6, tobs=200, SN=10, Tsky=1.0)
+        minF2 = min_flux_test2(Pf, DM[1], beta=2, tau=1.0e-2, DM0=60, DM1=7.5, G=0.64, Trec=21, d_freq=300e6, tobs=1000, SN=5, Tsky=1.0)
         
         if s_den1GHz < minF2
             continue
@@ -305,12 +305,12 @@ function likelihood_func(theta, real_samples, rval; npts_cdf=50)
     num_out = length(out_pop[:,1])
     Obs_pulsarN_L = (num_out - 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsL
     Obs_pulsarN_H = (num_out + 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsH
-    print(num_out, "\n")
+    # print(num_out, "\n")
     
-    if (N_pulsars_tot .< Obs_pulsarN_L)||(N_pulsars_tot .> Obs_pulsarN_H)
-        print("Pred Low, Pred High, Actual \t", Obs_pulsarN_L , "\t", Obs_pulsarN_H, "\t", N_pulsars_tot, "\n" )
-        return 100, 1e-100
-    end
+#    if (N_pulsars_tot .< Obs_pulsarN_L)||(N_pulsars_tot .> Obs_pulsarN_H)
+#        print("Pred Low, Pred High, Actual \t", Obs_pulsarN_L , "\t", Obs_pulsarN_H, "\t", N_pulsars_tot, "\n" )
+#        return 100, 1e-100
+#    end
     
     if isempty(out_pop)
         print("Empty?? \n")
