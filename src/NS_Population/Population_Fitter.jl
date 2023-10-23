@@ -144,7 +144,7 @@ function evolve_pulsar(B0, P0, Theta_in, age; n_times=1e2, beta=6e-40, tau_Ohm=1
     
     y0 = [P0, mod(Theta_in, pi/2)]
     Mvars = [beta, tau_Ohm, B0]
-    tspan = (1, age)
+    tspan = (0, age)
     saveat = (tspan[2] .- tspan[1]) ./ n_times
     
     Bf = B0 .* exp.(- age ./ tau_Ohm);
@@ -222,7 +222,7 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
     
     temp_store = zeros(length(ages), 7)
     
-    for i in 1:length(ages)
+    Threads.@threads for i in 1:length(ages)
         if typeof(pulsar_data) == Nothing
             B0 = draw_Bfield_lognorm()
             P0 = draw_period_norm()
@@ -299,7 +299,7 @@ function likelihood_func(theta, real_samples, rval; npts_cdf=50)
     P_in = abs.(out_samps[:,1]) # 10 .^(out_samps[:,1])
     B_in = 10 .^(out_samps[:,2])
     data_in = hcat(B_in, P_in)
-    ages = rand(0:max_T, length(B_in))
+    ages = rand(1:max_T, length(B_in))
     
     out_pop = simulate_pop(Nsamples, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=0.1, pulsar_data=data_in)
     num_out = length(out_pop[:,1])
