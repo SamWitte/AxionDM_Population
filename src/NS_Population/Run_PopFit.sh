@@ -1,4 +1,5 @@
-#!
+#!/bin/bash
+source /mnt/zfsusers/switte/.bashrc
 
 Fname="Pop_"
 
