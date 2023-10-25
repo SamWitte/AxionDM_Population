@@ -36,23 +36,23 @@ xIn = [0.2, log10.(8e12), 0.15, 0.4, 0.0]
 run_magnetars = false
 
 
-Pmin=0.05
-Pmax=0.9
+Pmin=0.02
+Pmax=0.7
 Bmin=7e12
-Bmax=3e13
+Bmax=5e13
 
 
-sigP_min=0.05
+sigP_min=0.02
 sigP_max=0.7
 sigB_min=0.1
-sigB_max=1.2
+sigB_max=1.0
 
 Npts_P=5
 Npts_B=5
 NPts_Psig=5
 NPts_Bsig=5
 
-tau_ohmic = 10.0e6  # yrs
+tau_ohmic = 1.0e6  # yrs
 max_T = 5.0 * tau_ohmic
 
 Nsamples = 1000000 # samples per point
