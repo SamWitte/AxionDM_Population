@@ -22,72 +22,7 @@ u = pyimport("astropy.units")
 pygedm = pyimport("pygedm")
 
 
-Random.seed!(1235)
-
-run_analysis = true
-fileName = "Test_Run"
-
-run_plot_data = false
-if run_plot_data
-    fileName = "Sample_population"
-end
-xIn = [0.2, log10.(8e12), 0.15, 0.4, 0.0]
-
-run_magnetars = false
-
-
-Pmin=0.05
-Pmax=0.9
-Bmin=7e12
-Bmax=3e13
-
-
-sigP_min=0.05
-sigP_max=0.7
-sigB_min=0.1
-sigB_max=1.2
-
-Npts_P=5
-Npts_B=5
-NPts_Psig=5
-NPts_Bsig=5
-
-tau_ohmic = 10.0e6  # yrs
-max_T = 5.0 * tau_ohmic
-
-Nsamples = 1000000 # samples per point
-
-filePulsars = open(readdlm,"psrcat_tar/store_out/Pulsar_Population.txt")
-fileMagnetars = open(readdlm, "psrcat_tar/store_out/Magnetar_Population.txt")
-
-if !run_magnetars
-    true_pop = filePulsars[:, 2:3]
-    B_maxT = 1e15
-    B_minT = 1e10
-else
-    true_pop = vcat(filePulsars[:, 2:3], fileMagnetars[:, 2:3])
-    B_maxT = 1e15
-    B_minT = 1e10
-end
-
-
-
-# cut data
-true_pop = true_pop[true_pop[:,2] .> 0, :]
-B_true = 1e12 .* sqrt.((true_pop[:, 2] ./ 1e-15) .* true_pop[:, 1])
-true_pop = true_pop[(B_true .> B_minT) .& (B_true .< B_maxT), :]
-N_pulsars_tot = length(true_pop[:, 1])  # this is ATNF number 3389
-print("Number pulsars in sample \t", N_pulsars_tot, "\n")
-
-
-rval = cor(true_pop[:,1], true_pop[:,2])
-# print("Correlation Coeff \t ", rval, "\n")
-
-NS_formationrateL = 1.0  # ~ 2 per century [be conservative]
-NS_formationrateH = 4.0  # ~ 3 per century [be conservative]
-num_pulsarsL = NS_formationrateL / 1e2 * max_T
-num_pulsarsH = NS_formationrateH / 1e2 * max_T
-println("Estimated number of pulsars formed in the last ", max_T, " years: ", num_pulsarsL, "\t", num_pulsarsH, "\n")
+# Random.seed!(1235)
 
 
 function beaming_cut(P)
@@ -115,7 +50,8 @@ function sample_location(age; diskH=0.5, diskR=10.0)
     theta = acos(1.0 - 2.0 * rand())
     phi = 2 * pi * rand()
     vel_vec = Vel1d * [cos(phi) * sin(theta), sin(theta) * sin(phi), cos(theta)]
-    xpos = x_cart + vel_vec * age * (3.24078e-17 * 3.15e7)
+    # xpos = x_cart + vel_vec * age * (3.24078e-17 * 3.15e7)
+    xpos = x_cart
     return xpos
 end
 
@@ -237,14 +173,14 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
         dist_earth = sqrt.(sum(xfin_shift.^2))
         
         Bf = B0 .* exp.(- ages[i] ./ tau_Ohm)
-        Bdeath = 0.34 * 1e12 * P0.^2
-        if Bf <= Bdeath
-            continue
-        end
+         Bdeath = 0.34 * 1e12 * P0.^2
+         if (Bf <= Bdeath)&&(kill_dead)
+             continue
+         end
         
         Bf, Pf, ThetaF, Pdot = evolve_pulsar(B0, P0, Theta_in[i], ages[i], beta=beta, tau_Ohm=tau_Ohm)
         Bdeath = 0.34 * 1e12 * Pf.^2
-        if Bf <= Bdeath
+        if (Bf <= Bdeath)&&(kill_dead)
             continue
         end
         
@@ -256,7 +192,6 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
     
     temp_store = temp_store[temp_store[:,1] .> 0.0, :]
     
-    # final_list = SharedArray{Float64}(length(temp_store[:,1]), 2)
     final_list = zeros(length(temp_store[:,1]), 2)
     for i in 1:length(temp_store[:,1])
         age, Bf, Pf, Pdot, GC_b, GC_l, dist_earth = temp_store[i, :]
@@ -288,7 +223,7 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
 end
 
 
-function likelihood_func(theta, real_samples, rval; npts_cdf=50)
+function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50)
     mu_P, mu_B, sig_P, sig_B, cov_PB = theta
     mean = [mu_P, mu_B]
     cov = [sig_P.^2 cov_PB.^2; cov_PB.^2 sig_B.^2]
@@ -303,8 +238,8 @@ function likelihood_func(theta, real_samples, rval; npts_cdf=50)
     
     out_pop = simulate_pop(Nsamples, ages, beta=6e-40, tau_Ohm=10.0e6, width_threshold=0.1, pulsar_data=data_in)
     num_out = length(out_pop[:,1])
-    Obs_pulsarN_L = (num_out - 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsL
-    Obs_pulsarN_H = (num_out + 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsH
+#    Obs_pulsarN_L = (num_out - 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsL
+#    Obs_pulsarN_H = (num_out + 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsH
     # print(num_out, "\n")
     
 #    if (N_pulsars_tot .< Obs_pulsarN_L)||(N_pulsars_tot .> Obs_pulsarN_H)
@@ -383,8 +318,8 @@ end
 
 
 
-function hard_scan(real_samples, rval; max_T=1e7, Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5)
-    # Pmu_scan = range(log10.(Pmin), stop=log10.(Pmax), length=Npts_P)
+function hard_scan(real_samples, rval, Nsamples; max_T=1e7, Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5)
+    
     Pmu_scan = range(Pmin, stop=Pmax, length=Npts_P)
     Bmu_scan = range(log10.(Bmin), stop=log10.(Bmax), length=Npts_B)
     Psig_scan = range(sigP_min, stop=sigP_max, length=NPts_Psig)
@@ -396,11 +331,8 @@ function hard_scan(real_samples, rval; max_T=1e7, Pmin=0.05, Pmax=0.75, Bmin=1e1
                 for i4 in 1:length(Bsig_scan)
                     theta = [Pmu_scan[i1], Bmu_scan[i2], Psig_scan[i3], Bsig_scan[i4], 0.0]
                     print(theta, "\n")
-                    Dval, qval = likelihood_func(theta, real_samples, rval)
-                    # outL = likelihood_func(theta, real_samples, rval)
-                    # print(outL, "\n")
-                    # Dval = outL[1]
-                    # qval = outL[2]
+                    Dval, qval = likelihood_func(theta, real_samples, rval, Nsamples, max_T)
+                  
                     push!(qval_L, [Pmu_scan[i1], Bmu_scan[i2], Psig_scan[i3], Bsig_scan[i4], 0.0, Dval, qval])
                     
                 end
@@ -415,7 +347,7 @@ function minimization_scan(real_samples, rval; max_T=1e7)
     b = rand(5)
     
     function loss(xIn)
-        Dval, qval = likelihood_func(xIn .* b, real_samples, rval)
+        Dval, qval = likelihood_func(xIn .* b, real_samples, rval, Nsamples, max_T)
         return Dval
     end
     
@@ -432,33 +364,96 @@ function minimization_scan(real_samples, rval; max_T=1e7)
 end
 
 
+function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65, 0.0], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=true)
 
-time0=Dates.now()
+    
+    max_T = max_T_f * tau_ohmic
 
-if run_analysis
-    # minimization_scan(true_pop, rval; max_T=max_T)
-    outputTable = hard_scan(true_pop, rval, max_T=max_T, Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig)
 
-    writedlm(fileName*".dat", outputTable)
+    
+    filePulsars = open(readdlm,"psrcat_tar/store_out/Pulsar_Population.txt")
+
+    if !run_magnetars
+        true_pop = filePulsars[:, 2:3]
+        B_maxT = 1e15
+        B_minT = 1e10
+    else
+        fileMagnetars = open(readdlm, "psrcat_tar/store_out/Magnetar_Population.txt")
+        true_pop = vcat(filePulsars[:, 2:3], fileMagnetars[:, 2:3])
+        B_maxT = 1e15
+        B_minT = 1e10
+    end
+
+
+
+    # cut data
+    true_pop = true_pop[true_pop[:,2] .> 0, :]
+    B_true = 1e12 .* sqrt.((true_pop[:, 2] ./ 1e-15) .* true_pop[:, 1])
+    true_pop = true_pop[(B_true .> B_minT) .& (B_true .< B_maxT), :]
+    N_pulsars_tot = length(true_pop[:, 1])  # this is ATNF number 3389
+    print("Number pulsars in sample \t", N_pulsars_tot, "\n")
+
+
+    rval = cor(true_pop[:,1], true_pop[:,2])
+    # print("Correlation Coeff \t ", rval, "\n")
+
+    NS_formationrateL = 1.0  # ~ 2 per century [be conservative]
+    NS_formationrateH = 4.0  # ~ 3 per century [be conservative]
+    num_pulsarsL = NS_formationrateL / 1e2 * max_T
+    num_pulsarsH = NS_formationrateH / 1e2 * max_T
+    println("Estimated number of pulsars formed in the last ", max_T, " years: ", num_pulsarsL, "\t", num_pulsarsH, "\n")
+
+    # time0=Dates.now()
+
+    if run_analysis
+        # minimization_scan(true_pop, rval; max_T=max_T)
+        outputTable = hard_scan(true_pop, rval, Nsamples, max_T=max_T, Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig)
+        if temp
+            writedlm("temp/"*fileName*".dat", outputTable)
+        else
+            writedlm(fileName*".dat", outputTable)
+        end
+    end
+
+    if run_plot_data
+        mu_P, mu_B, sig_P, sig_B, cov_PB = xIn
+        mean = [mu_P, mu_B]
+        cov = [sig_P cov_PB; cov_PB sig_B]
+        dist = MvNormal(mean, cov)
+        out_samps = rand(dist, Nsamples)'
+        
+        
+        P_in = abs.(out_samps[:,1]) # 10 .^(out_samps[:,1])
+        B_in = 10 .^(out_samps[:,2])
+        data_in = hcat(B_in, P_in)
+        ages = rand(0:max_T, length(B_in))
+        
+        out_pop = simulate_pop(Nsamples, ages, tau_Ohm=tau_ohmic, pulsar_data=data_in)
+        
+        writedlm(fileName*".dat", out_pop)
+        writedlm(fileName*"_IN.dat", out_samps)
+    end
+
+    # time1=Dates.now()
+    # print("\n\n Run time: ", time1-time0, "\n")
 end
 
-if run_plot_data
-    mu_P, mu_B, sig_P, sig_B, cov_PB = xIn
-    mean = [mu_P, mu_B]
-    cov = [sig_P cov_PB; cov_PB sig_B]
-    dist = MvNormal(mean, cov)
-    out_samps = rand(dist, Nsamples)'
-    
-    
-    P_in = abs.(out_samps[:,1]) # 10 .^(out_samps[:,1])
-    B_in = 10 .^(out_samps[:,2])
-    data_in = hcat(B_in, P_in)
-    ages = rand(0:max_T, length(B_in))
-    
-    out_pop = simulate_pop(Nsamples, ages, tau_Ohm=tau_ohmic, pulsar_data=data_in)
-    writedlm(fileName*".dat", out_pop)
-    writedlm(fileName*"_IN.dat", out_samps)
-end
+function File_Name_Out(run_analysis, run_plot_data, tau_ohmic; max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65, 0.0], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5)
 
-time1=Dates.now()
-print("\n\n Run time: ", time1-time0, "\n")
+    fileN = "PopFit_TauO_"*string(round(tau_ohmic,sigdigits=2))
+    fileN *= "_maxTf_"*string(round(max_T_f,sigdigits=1))
+    if run_magnetars
+        fileN *= "_MagsYes_"
+    end
+    if kill_dead
+        fileN *= "_KillDeadYes_"
+    end
+    fileN *= "_Pval_"*string(round(Pmin,sigdigits=1))*"_"*string(round(Pmax,sigdigits=1))
+    fileN *= "_Bval_"*string(round(Bmin,sigdigits=1))*"_"*string(round(Bmax,sigdigits=1))
+    fileN *= "_sPval_"*string(round(sigP_min,sigdigits=1))*"_"*string(round(sigP_max,sigdigits=1))
+    fileN *= "_sBval_"*string(round(sigB_min,sigdigits=1))*"_"*string(round(sigB_max,sigdigits=1))
+    fileN *= "_Npts_P_B_sP_sB_"*string(Npts_P)*"_"*string(Npts_B)*"_"*string(NPts_Psig)*"_"*string(NPts_Bsig)*"_"
+    
+    fileN *= ".dat"
+    return fileN
+end
