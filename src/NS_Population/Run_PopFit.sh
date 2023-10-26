@@ -32,13 +32,13 @@ for ((i = 0; i < $NPts_Psig ; i++)); do
         cntTot+=1
         if (( $cntTot % (SLURM_NTASKS-1) == 0 ))
         then
-            echo And is also an even number.
+            wait
         fi
     done
 done
+wait
 
 
-
-julia --threads 1 Gen_pop_fit.jl --NPts_Psig $NPts_Psig --NPts_Bsig $NPts_Bsig --Npts_B $Npts_B --Npts_P $Npts_P --Bmax $Bmax  --Bmin $Bmin --Pmax $Pmax --Pmin $Pmin --sigP_min $tempSp --sigP_max $tempSp --sigB_min $tempSb --sigB_max $tempSb --fileName $Fname --run_analysis false --run_Combine true --Nruns cntTot
+julia --threads 1 Gen_pop_fit.jl --NPts_Psig $NPts_Psig --NPts_Bsig $NPts_Bsig --Npts_B $Npts_B --Npts_P $Npts_P --Bmax $Bmax  --Bmin $Bmin --Pmax $Pmax --Pmin $Pmin --sigP_min $tempSp --sigP_max $tempSp --sigB_min $tempSb --sigB_max $tempSb --fileName $Fname --run_analysis false --run_Combine true --Nruns $cntTot
 
 
