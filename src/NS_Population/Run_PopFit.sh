@@ -1,7 +1,7 @@
 #!/bin/bash
 source /mnt/zfsusers/switte/.bashrc
 
-Fname="Pop_"
+Fname="Pop_Tau1_"
 
 Npts_P=5
 Npts_B=5
@@ -18,7 +18,7 @@ dsB=0.2
 NPts_Psig=5
 NPts_Bsig=5
 
-tau_ohmic=10.0
+tau_ohmic=1.0
 max_T_f=5.0
 run_magnetars=false
 kill_dead=false
