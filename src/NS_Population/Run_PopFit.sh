@@ -24,8 +24,8 @@ run_magnetars=false
 kill_dead=false
 
 declare -i memPerjob
-memPerjob=$((SLURM_MEM_PER_CPU/SLURM_NTASKS))
-echo "Slurm tasks and mem per job" $SLURM_NTASKS $memPerjob
+memPerjob=$((SLURM_MEM_PER_CPU))
+
 
 cntTot=0
 for ((i = 0; i < $NPts_Psig ; i++)); do
