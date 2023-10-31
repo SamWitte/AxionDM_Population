@@ -1,7 +1,7 @@
 #!/bin/bash
 source /mnt/zfsusers/switte/.bashrc
 
-Fname="Pop_Tau1_"
+Fname="Pop_Tau10y_DeadK_"
 
 Npts_P=5
 Npts_B=5
@@ -18,15 +18,15 @@ dsB=0.2
 NPts_Psig=5
 NPts_Bsig=5
 
-tau_ohmic=1.0
+tau_ohmic=10.0
 max_T_f=5.0
 run_magnetars=false
-kill_dead=false
+kill_dead=true
 
 declare -i memPerjob
 memPerjob=$((SLURM_MEM_PER_CPU))
 
-
+echo "Testing ...." $SLURM_NTASKS
 cntTot=0
 for ((i = 0; i < $NPts_Psig ; i++)); do
     tempSp=$( echo "$sigP_min + $i*$dsP" | bc )
@@ -37,6 +37,7 @@ for ((i = 0; i < $NPts_Psig ; i++)); do
         cntTot+=1
         if (( $cntTot % (SLURM_NTASKS-1) == 0 ))
         then
+	    echo "Waiting..." $cntTot
             wait
         fi
     done
