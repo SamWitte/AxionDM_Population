@@ -9,7 +9,7 @@ Pmin=0.02
 Pmax=0.7
 Bmin=5e12
 Bmax=3e13
-
+Nsamps=1000000
 
 sigP_min=0.1
 dsP=0.1
