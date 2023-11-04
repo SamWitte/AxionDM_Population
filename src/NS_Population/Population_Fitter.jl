@@ -12,6 +12,8 @@ using Suppressor
 using Dates
 using Distributed
 using SharedArrays
+# using Optim
+import AffineInvariantMCMC
 
 # using Flux
 # using SciMLSensitivity
@@ -22,7 +24,7 @@ u = pyimport("astropy.units")
 pygedm = pyimport("pygedm")
 
 
-# Random.seed!(1235)
+Random.seed!(1235)
 
 
 function beaming_cut(P)
@@ -226,7 +228,10 @@ end
 function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50)
     mu_P, mu_B, sig_P, sig_B, cov_PB = theta
     mean = [mu_P, mu_B]
-    cov = [sig_P.^2 cov_PB.^2; cov_PB.^2 sig_B.^2]
+    # cov = [sig_P.^2 cov_PB.^2; cov_PB.^2 sig_B.^2]
+    cov = [sig_P.^2 0.0; 0.0 sig_B.^2]
+    # print("here 1\n")
+    # print("here 2\n\n")
     dist = MvNormal(mean, cov)
     out_samps = rand(dist, Nsamples)'
     
@@ -342,31 +347,75 @@ function hard_scan(real_samples, rval, Nsamples; max_T=1e7, Pmin=0.05, Pmax=0.75
     return qval_L
 end
 
-function minimization_scan(real_samples, rval; max_T=1e7)
-    x_mean = [0.3, log10.(5e12), 0.2, 0.2, 0.0]
-    b = rand(5)
+function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh=0.6, Plow=0.02, LBhigh=log10.(3e13), LBlow=log10.(2e12), sPlow=0.05, sPhigh=0.7, sBlow=0.1, sBhigh=1.2, numwalkers=5, Nruns=1000)
+    
+    maxV = 1e20
+    maxParams = nothing
+    
+    function prior(theta)
+        # Pv, Bv, sP, sB, cov = theta
+        Pv, Bv, sP, sB = theta
+        
+        if (Plow < Pv < Phigh)&&(LBlow < Bv < LBhigh)&&(sPlow < sP < sPhigh)&&(sBlow < sB < sBhigh)&&(0.0 < cov < 0.5)
+            return 0.0
+        end
+        return -Inf
+    end
     
     function loss(xIn)
-        Dval, qval = likelihood_func(xIn .* b, real_samples, rval, Nsamples, max_T)
-        return Dval
+        Dval, qval = likelihood_func(xIn, real_samples, rval, Nsamples, max_T)
+        # return Dval
+        print(log.(qval), "\t", xIn, "\n")
+        return log.(qval)
     end
     
-    θ = Flux.Params(b)
-    grads = gradient(() -> loss(x_mean), θ)
-    η = 0.1 # Learning Rate
-    opt = Descent(η)
-    for p in (b)
-        Flux.Optimise.update!(opt, p, grads[p])
-        print(b, "\n")
+    function log_probability(theta)
+        lp = prior(theta)
+        if !isfinite.(lp)
+            return -Inf
+        end
+        out = lp .+ loss(theta)
+        
+        return out
     end
     
-    return qval_L
+    
+    # numwalkers=5
+    x0 = rand(5, numwalkers)
+    
+    len_P = abs.(Phigh - Plow )
+    len_B = abs.(LBhigh .- LBlow)
+    len_sP = abs.(sPlow .- sPhigh)
+    len_sB = abs.(sBlow .- sBhigh)
+    
+    x0[1, :] .*= len_P
+    x0[1, :] .+= Plow
+    
+    x0[2, :] .*= len_B
+    x0[2, :] .+= LBlow
+    
+    x0[3, :] .*= len_sP
+    x0[3, :] .+= sPlow
+    
+    x0[4, :] .*= len_sB
+    x0[4, :] .+= sBlow
+    
+    x0[5, :] .*= 0.5
+    
+    # Nruns=10
+    chain, llhoodvals = AffineInvariantMCMC.sample(log_probability, numwalkers, x0, Nruns, 1)
+    flatchain, flatllhoodvals = AffineInvariantMCMC.flattenmcmcarray(chain, llhoodvals)
+    
+    aM = argmax(flatllhoodvals)
+    print(flatllhoodvals[aM], "\t", flatchain[:, aM], "\n")
+    # return maxV, maxParams, chain
+    return flatllhoodvals[aM], flatchain[:, aM], flatchain
 end
 
 
-function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65, 0.0], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=true)
+function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65, 0.0], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=true, minimizeIt=false, numwalkers=5, Nruns=1)
 
-    
+    print("Tau \t", tau_ohmic, "\n")
     max_T = max_T_f * tau_ohmic
 
 
@@ -406,22 +455,30 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
     # time0=Dates.now()
 
     if run_analysis
-        # minimization_scan(true_pop, rval; max_T=max_T)
-        outputTable = hard_scan(true_pop, rval, Nsamples, max_T=max_T, Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig)
-        if temp
-            writedlm("temp/"*fileName*".dat", outputTable)
+        if minimizeIt
+            minP, minV = minimization_scan(true_pop, rval; max_T=max_T, Nsamples=Nsamples, numwalkers=numwalkers, Nruns=Nruns)
+            writedlm("output_fits/Best_Fit_"*fileName*".dat", minV)
+            writedlm("output_fits/MCMC_"*fileName*".dat", minV)
         else
-            writedlm(fileName*".dat", outputTable)
+            outputTable = hard_scan(true_pop, rval, Nsamples, max_T=max_T, Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig)
+            if temp
+                writedlm("temp/"*fileName*".dat", outputTable)
+            else
+                writedlm(fileName*".dat", outputTable)
+            end
         end
+        
     end
 
     if run_plot_data
         mu_P, mu_B, sig_P, sig_B, cov_PB = xIn
         mean = [mu_P, mu_B]
         cov = [sig_P cov_PB; cov_PB sig_B]
+        # cov = [sig_P 0.0; cov_PB 0.0]
+        
         dist = MvNormal(mean, cov)
         out_samps = rand(dist, Nsamples)'
-        
+
         
         P_in = abs.(out_samps[:,1]) # 10 .^(out_samps[:,1])
         B_in = 10 .^(out_samps[:,2])
