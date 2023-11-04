@@ -9,7 +9,7 @@ Pmin=0.02
 Pmax=0.7
 Bmin=5e12
 Bmax=3e13
-
+Nsamps=1000000
 
 sigP_min=0.1
 dsP=0.1
@@ -35,11 +35,11 @@ for ((i = 0; i < $NPts_Psig ; i++)); do
         srun --ntasks=1 --exclusive --cpus-per-task=1 --mem=$memPerjob julia --threads 1 Gen_pop_fit.jl --NPts_Psig 1 --NPts_Bsig 1 --Npts_B $Npts_B --Npts_P $Npts_P --Bmax $Bmax  --Bmin $Bmin --Pmax $Pmax --Pmin $Pmin --sigP_min $tempSp --sigP_max $tempSp --sigB_min $tempSb --sigB_max $tempSb --fileName $Fname$cntTot --run_analysis true --run_Combine false --tau_ohmic $tau_ohmic --max_T_f $max_T_f --run_magnetars $run_magnetars --kill_dead $kill_dead &
         sleep 3
         cntTot=$(expr $cntTot + 1)
-        if (( $cntTot % ($SLURM_NTASKS-1) == 0 ))
-        then
-            echo "Waiting..." $cntTot
-            wait
-        fi
+#        if (( $cntTot % ($SLURM_NTASKS-1) == 0 ))
+#        then
+#            echo "Waiting..." $cntTot
+#            wait
+#        fi
     done
 done
 wait
