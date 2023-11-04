@@ -353,10 +353,10 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     maxParams = nothing
     
     function prior(theta)
-        # Pv, Bv, sP, sB, cov = theta
-        Pv, Bv, sP, sB = theta
+        Pv, Bv, sP, sB, cov = theta
+        # Pv, Bv, sP, sB = theta
         
-        if (Plow < Pv < Phigh)&&(LBlow < Bv < LBhigh)&&(sPlow < sP < sPhigh)&&(sBlow < sB < sBhigh)&&(0.0 < cov < 0.5)
+        if (Plow .< Pv .< Phigh)&&(LBlow .< Bv .< LBhigh)&&(sPlow .< sP .< sPhigh)&&(sBlow .< sB .< sBhigh)&&(0.0 .< cov .< 0.5)
             return 0.0
         end
         return -Inf
@@ -403,6 +403,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     x0[5, :] .*= 0.5
     
     # Nruns=10
+    # print(x0, "\t", numwalkers, "\t", Nruns, "\n")
     chain, llhoodvals = AffineInvariantMCMC.sample(log_probability, numwalkers, x0, Nruns, 1)
     flatchain, flatllhoodvals = AffineInvariantMCMC.flattenmcmcarray(chain, llhoodvals)
     
