@@ -410,7 +410,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     aM = argmax(flatllhoodvals)
     print(flatllhoodvals[aM], "\t", flatchain[:, aM], "\n")
     # return maxV, maxParams, chain
-    return flatllhoodvals[aM], flatchain[:, aM], flatchain
+    return flatllhoodvals[aM], flatchain[:, aM], chain
 end
 
 
@@ -457,9 +457,13 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
 
     if run_analysis
         if minimizeIt
-            minP, minV = minimization_scan(true_pop, rval; max_T=max_T, Nsamples=Nsamples, numwalkers=numwalkers, Nruns=Nruns)
-            writedlm("output_fits/Best_Fit_"*fileName*".dat", minV)
-            writedlm("output_fits/MCMC_"*fileName*".dat", minV)
+            OUTAll = minimization_scan(true_pop, rval; max_T=max_T, Nsamples=Nsamples, numwalkers=numwalkers, Nruns=Nruns)
+            out_bf = OUTALL[2]
+            push!(out_bf, OUTALL[1])
+            full_chain = OUTALL[3]
+            
+            writedlm("output_fits/Best_Fit_"*fileName*".dat", out_bf)
+            writedlm("output_fits/MCMC_"*fileName*".dat", full_chain)
         else
             outputTable = hard_scan(true_pop, rval, Nsamples, max_T=max_T, Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig)
             if temp
