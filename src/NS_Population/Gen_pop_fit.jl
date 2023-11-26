@@ -141,6 +141,15 @@ Nruns = parsed_args["Nruns"];
 numwalkers = parsed_args["numwalkers"]
 Nsamples = parsed_args["Nsamples"];
 
+print("Deets...\n\n")
+print("Tau Ohmic \t", tau_ohmic, "\n")
+print("max_T_f \t", max_T_f, "\n")
+print("fileName \t", fileName, "\n")
+print("kill_dead \t", kill_dead, "\n")
+print("run_magnetars \t", run_magnetars, "\n")
+print("Nruns \t", Nruns, "\n")
+print("numwalkers \t", numwalkers, "\n")
+print("Nsamples \t", Nsamples, "\n")
 
 if minimizeIt
     temp=false
