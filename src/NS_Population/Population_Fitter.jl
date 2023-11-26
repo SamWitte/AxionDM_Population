@@ -410,7 +410,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     aM = argmax(flatllhoodvals)
     print(flatllhoodvals[aM], "\t", flatchain[:, aM], "\n")
     # return maxV, maxParams, chain
-    return flatllhoodvals[aM], flatchain[:, aM], chain
+    return [flatllhoodvals[aM], flatchain[:, aM], chain]
 end
 
 
