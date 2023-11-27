@@ -1097,7 +1097,7 @@ end
 
 
 
-function find_samples_new(maxR, θm, ωPul, B0, rNS, Mass_a, Mass_NS; n_max=6, batchsize=2, thick_surface=false, iso=false, melrose=false, pre_randomized=nothing, t0=0.0, flat=false, rand_cut=true, delta_on_v=true)
+function find_samples_new(maxR, θm, ωPul, B0, rNS, Mass_a, Mass_NS; n_max=6, batchsize=2, thick_surface=false, iso=false, melrose=false, pre_randomized=nothing, t0=0.0, flat=false, rand_cut=true, delta_on_v=true, vmean_ax=220.0)
     
     if isnothing(pre_randomized)
         # ~~~collecting random samples
@@ -1147,9 +1147,9 @@ function find_samples_new(maxR, θm, ωPul, B0, rNS, Mass_a, Mass_NS; n_max=6, b
     x0_all= [x1 .* cos.(-ϕi) .* cos.(-θi) .+ x2 .* sin.(-ϕi) x2 .* cos.(-ϕi) .- x1 .* sin.(-ϕi) .* cos.(-θi) x1 .* sin.(-θi)];
     
     if delta_on_v
-        vIfty = (220.0 .+ rand(batchsize, 3) .* 1.0e-5) ./ sqrt.(3);
+        vIfty = (vmean_ax .+ rand(batchsize, 3) .* 1.0e-5) ./ sqrt.(3);
     else
-        vIfty = 220.0 .* erfinv.( 2.0 .* rand(batchsize, 3) .- 1.0);
+        vIfty = vmean_ax .* erfinv.( 2.0 .* rand(batchsize, 3) .- 1.0);
         # vIfty = erfinv.(2 .* rand(batchsize, 3) .- 1.0) .* vmean_ax .+ v_NS # km /s
     end
     
@@ -1277,7 +1277,7 @@ end
 
 
 
-function find_samples(maxR, ntimes_ax, θm, ωPul, B0, rNS, Mass_a, Mass_NS; n_max=8, batchsize=2, thick_surface=false, iso=false, melrose=false, pre_randomized=nothing, flat=false)
+function find_samples(maxR, ntimes_ax, θm, ωPul, B0, rNS, Mass_a, Mass_NS; n_max=8, batchsize=2, thick_surface=false, iso=false, melrose=false, pre_randomized=nothing, flat=false, vmean_ax=220.0)
 
     ## RE WRITE IN TERMS OF DIFFERENTIAL EQUATION AND CALLBACK!
     tt_ax = LinRange(-1.2*maxR, 1.2*maxR, ntimes_ax); # Not a real physical time -- just used to get trajectory crossing
@@ -1333,8 +1333,8 @@ function find_samples(maxR, ntimes_ax, θm, ωPul, B0, rNS, Mass_a, Mass_NS; n_m
     
     # print(x0_all, "\t", vvec_all, "\n")
     
-    vIfty = (220.0 .+ rand(batchsize, 3) .* 1.0e-5) ./ sqrt.(3);
-    # vIfty = 220.0 .* erfinv.( 2.0 .* rand(batchsize, 3) .- 1.0);
+    vIfty = (vmean_ax .+ rand(batchsize, 3) .* 1.0e-5) ./ sqrt.(3);
+    # vIfty = vmean_ax .* erfinv.( 2.0 .* rand(batchsize, 3) .- 1.0);
     
     vIfty_mag = sqrt.(sum(vIfty.^2, dims=2));
     gammaA = 1 ./ sqrt.(1.0 .- (vIfty_mag ./ c_km).^2 )
@@ -1869,7 +1869,7 @@ function main_runner(Mass_a, Ax_g, θm, ωPul, B0, rNS, Mass_NS, Ntajs; flat=tru
         
 
         redshift_factor = sqrt.(1.0 .- 2 * GNew .* Mass_NS ./ rmag ./ c_km.^2 );
-        dense_extra = 2 ./ sqrt.(π) * (1.0 ./ (220.0 ./ c_km)) .* sqrt.(2.0 * Mass_NS * GNew / c_km^2 ./ x0_pl[:,1])
+        dense_extra = 2 ./ sqrt.(π) * (1.0 ./ (vmean_ax ./ c_km)) .* sqrt.(2.0 * Mass_NS * GNew / c_km^2 ./ x0_pl[:,1])
         local_n = (rho_DM .* 1e9 ./ Mass_a) .* dense_extra[:]
         
         # factor of 1/2 from cos angle sampling
@@ -1879,7 +1879,7 @@ function main_runner(Mass_a, Ax_g, θm, ωPul, B0, rNS, Mass_NS, Ntajs; flat=tru
         
         
         # conversion_F = ones(length(vmag_tot))
-        # f_infty = (vIfty_mag ./ c_km).^2 ./ (π .* (220.0 ./ c_km).^2).^(3.0 ./ 2) .* exp.(- (vIfty_mag ./ 220.0).^2);
+        # f_infty = (vIfty_mag ./ c_km).^2 ./ (π .* (vmean_ax ./ c_km).^2).^(3.0 ./ 2) .* exp.(- (vIfty_mag ./ vmean_ax).^2);
         # f_infty = 1.0 ./ (4 .* π);
         f_infty = 1.0
         # sln_prob = v_tot .* abs.(cos.(angleVal)) .* phaseS .* (1e5 .^ 2) .* c_km .* 1e5 .* mcmc_weights .*  (jac_fv .* f_infty) .* fail_indx .* jacobian_GR[:]; # photons / second ONLY USE FOR NON DELTA!
