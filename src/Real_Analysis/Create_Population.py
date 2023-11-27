@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--fIn',  help='Input file')
 parser.add_argument('--PopN', type=int, default=1, help='Indx of population')
 parser.add_argument('--Ntasks', type=int, default=1, help='Indx of population')
+parser.add_argument('--Nscripts', type=int, default=1, help='Indx of population')
 args = parser.parse_args()
 
 Ntasks=args.Ntasks
@@ -50,7 +51,7 @@ if not os.path.exists(script_dir):
     os.mkdir(script_dir)
 run_script_maker = True
 PopIdx=args.PopN
-num_scripts = 4
+num_scripts = args.Nscripts
 
 ncall=7000
 nbins=10
