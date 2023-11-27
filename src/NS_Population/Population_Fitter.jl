@@ -457,7 +457,7 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
 
     if run_analysis
         if minimizeIt
-            OUTAll = minimization_scan(true_pop, rval; max_T=max_T, Nsamples=Nsamples, numwalkers=numwalkers, Nruns=Nruns)
+            OUTALL = minimization_scan(true_pop, rval; max_T=max_T, Nsamples=Nsamples, numwalkers=numwalkers, Nruns=Nruns)
             out_bf = OUTALL[2]
             push!(out_bf, OUTALL[1])
             full_chain = OUTALL[3]
