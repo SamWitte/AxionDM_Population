@@ -100,7 +100,7 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
     N_pulsars = total_num_pulsars(young=young)
     print("Number of pulsars: \t", N_pulsars)
     sve_array = []
-    N_pulsars=10
+
     for i in range(N_pulsars):
         alive = False
         while not alive:
@@ -148,7 +148,7 @@ def total_num_pulsars(young=True):
     else:
         total_num = 345050
         
-    return int(total_num)
+    return np.random.poisson(int(total_num))
     
     
 
