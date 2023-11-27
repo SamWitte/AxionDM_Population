@@ -205,6 +205,9 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
     for i in range(len(data_in[:,0])):
         # [i, B_0, P, chi, Bfinal[-1], Pfinal[-1], chifinal[-1], age/1e6, rho_DM, v0_DM, locNS[0], locNS[1], locNS[2], vNS[0], vNS[1], vNS[2], MassNS, radiusNS, view_angle]
         
+        if check_conversion(MassA, data_in[i, 4], data_in[i, 5], data_in[i, 6]) == 0:
+            continue
+        
         newL = "B0={:.3e} \n".format(data_in[i, 4])
         newL += "rotW={:.4f} \n".format(2*np.pi / data_in[i, 5])
         newL += "ThetaM={:.4f} \n".format(data_in[i, 6])
@@ -369,7 +372,18 @@ def v0_DM(r):
     # r in kpc, v0 in km/s
     return 122.67 * np.sqrt(1 / (r * 1e3)) # derived from Bens paper with gamma = 1
 
-
+def check_conversion(MassA, B0, P0, ThetaM):
+    nGJ = 2 * B0 * (2*np.pi / P0) / 0.3 * 1.95e-2 * 6.58e-16 # eV^3
+    omPole = np.sqrt(4*np.pi * nGJ / (137 * 5.11e5)) # eV
+    if ThetaM < (np.pi / 2.0):
+        TmEV = ThetaM / 2.0
+    else:
+        TmEV = (ThetaM + np.pi) / 2.0
+    omPole *= np.abs(3 * np.cos(TmEV) * (np.cos(TmEV) * np.cos(ThetaM) + np.sin(TmEV) * np.sin(ThetaM)) - np.cos(ThetaM))**0.5 / np.sqrt(2)
+    if MassA < omPole:
+        return 1
+    else:
+        return 0 # no conversion
 
         
 
