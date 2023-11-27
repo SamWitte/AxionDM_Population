@@ -26,16 +26,17 @@ function Vegas_sampler(theta_target, theta_err, Mass_a, θm, ωPul, B0, rNS; ret
     
     
     maxR = RT.Find_Conversion_Surface(Mass_a, fix_time, θm, ωPul, B0, rNS, 1, false, plasma_mod, func_BField, dead=dead, dead_rmax=dead_rmax)[1]
-    
+    print(maxR, "\n")
     st = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     en = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
     f = x -> vegas_func(x, maxR, Mass_a, θm, ωPul, B0, rNS; fix_time=fix_time, Mass_NS=Mass_NS, thick_surface=thick_surface, flat=flat, isotropic=isotropic, melrose=melrose, rho_DM=rho_DM, Ax_g=Ax_g, theta_mean=theta_target, theta_err=theta_err, phi_mean=phi_target, phi_err=phi_err, constrain_phi=constrain_phi, add_tau=add_tau, CLen_Scale=CLen_Scale, CP_one_D=CP_one_D, finalX_test=true, vmean_ax=vmean_ax);
     
-
+    
     finalDist = nothing
     for i in 1:Ntest_ini
         theta_out = f(rand(6))
+        
         if theta_out .> 1e-100
             if isnothing(finalDist)
                 finalDist = [abs.(theta_target .- theta_out)]

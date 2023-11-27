@@ -170,7 +170,7 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
     out_file = f_out
     # write into to each script
     
-    block_text = "srun -n 1 --exclusive --mem=$memPerjob --cpus-per-task=1 julia --threads 1 Gen_Vegas_Server.jl --MassA $MassA --B0 $B0 --ThetaM $ThetaM --rotW $rotW --AxG $gagg --Mass_NS $MassNS --rNS $rNS  --ftag $tagF$i --run_RT 1 --Flat false --Iso false --add_tau true --Thick true --side_runs $SLURM_NTASKS --thetaN 1 --theta_target $thetaV --rhoDM $rhoDM --vmean_ax $vmean_ax --debug false --ncalls $ncall --nbins $nbins --maxitrs $maxitrs --theta_err $theta_err --null_fill $null_fill --reflect_LFL $reflect_LFL --delta_on_v $delta_on_v --compute_point $compute_point --return_width $return_width --output_dir $out_file & \n"
+    block_text = "srun -n 1 --exclusive --mem=$memPerjob --cpus-per-task=1 julia --threads 1 Gen_Vegas_Server.jl --MassA $MassA --B0 $B0 --ThetaM $ThetaM --rotW $rotW --AxG $gagg --Mass_NS $Mass_NS --rNS $rNS  --ftag $ftag --add_tau true --Thick true --thetaN 1 --theta_target $thetaV --rhoDM $rhoDM --vmean_ax $vmean_ax --debug false --ncalls $ncall --nbins $nbins --maxitrs $maxitrs --theta_err $theta_err --null_fill $null_fill --reflect_LFL $reflect_LFL --delta_on_v $delta_on_v --compute_point $compute_point --return_width $return_width --output_dir $out_file & \n"
    
     
     # SERVER SPECIFIC -- writing for Hydra
@@ -178,7 +178,7 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
         arr_text[i] = "#!/bin/bash -l \ncd ../../RayTracing/ \nmodule load julia \n"
         arr_text[i] += "declare -i memPerjob \nmemPerjob=$((SLURM_MEM_PER_CPU/SLURM_NTASKS)) \n\n"
         
-        arr_text[i] += "output_dir=../Real_Analysis/"+out_file+"\n"
+        arr_text[i] += "out_file=../Real_Analysis/"+out_file+"\n"
         arr_text[i] += "ncall={:.0f}\n".format(ncall)
         arr_text[i] += "nbins={:.0f}\n".format(nbins)
         arr_text[i] += "maxitrs={:.0f}\n".format(maxitrs)
@@ -195,10 +195,22 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
         arr_text[i] += "B_DQ={:.3f}\n".format(B_DQ)
         arr_text[i] += "PhiQ={:.3f}\n".format(PhiQ)
         arr_text[i] += "ThetaQ={:.3f}\n".format(ThetaQ)
-        arr_text[i] += "reflect_LFL=%s\n" % reflect_LFL
-        arr_text[i] += "delta_on_v=%s\n" % delta_on_v
-        arr_text[i] += "compute_point=%s\n" % compute_point
-        arr_text[i] += "return_width=%s\n\n\n" % return_width
+        if reflect_LFL:
+            arr_text[i] += "reflect_LFL=true\n"
+        else:
+            arr_text[i] += "reflect_LFL=false\n"
+        if delta_on_v:
+            arr_text[i] += "delta_on_v=true\n"
+        else:
+            arr_text[i] += "delta_on_v=false\n"
+        if compute_point:
+            arr_text[i] += "compute_point=true\n"
+        else:
+            arr_text[i] += "compute_point=false\n"
+        if return_width:
+            arr_text[i] += "return_width=true\n\n\n"
+        else:
+            arr_text[i] += "return_width=false\n\n\n"
         
     
     indx = 0
@@ -301,8 +313,8 @@ def draw_radius():
     return val
 
 def check_conversion(MassA, B, P, thetaM):
-    ne_max = 2 * (2*np.pi / P) * (B * 1.95e-2) / 0.3 * 6.58e-16
-    max_omegaP = np.sqrt(4*np.pi / 137 * ne_max / 5.11e5)
+    ne_max = 2 * (2*np.pi / P) * (B * np.cos(thetaM) * 1.95e-2) / 0.3 * 6.58e-16
+    max_omegaP = np.sqrt(4*np.pi / 137 * np.abs(ne_max) / 5.00e5)
     if max_omegaP < MassA:
         return 0
     else:
@@ -373,18 +385,7 @@ def v0_DM(r):
     # r in kpc, v0 in km/s
     return 122.67 * np.sqrt(1 / (r * 1e3)) # derived from Bens paper with gamma = 1
 
-def check_conversion(MassA, B0, P0, ThetaM):
-    nGJ = 2 * B0 * (2*np.pi / P0) / 0.3 * 1.95e-2 * 6.58e-16 # eV^3
-    omPole = np.sqrt(4*np.pi * nGJ / (137 * 5.11e5)) # eV
-    if ThetaM < (np.pi / 2.0):
-        TmEV = ThetaM / 2.0
-    else:
-        TmEV = (ThetaM + np.pi) / 2.0
-    omPole *= np.abs(3 * np.cos(TmEV) * (np.cos(TmEV) * np.cos(ThetaM) + np.sin(TmEV) * np.sin(ThetaM)) - np.cos(ThetaM))**0.5 / np.sqrt(2)
-    if MassA < omPole:
-        return 1
-    else:
-        return 0 # no conversion
+
 
         
 
