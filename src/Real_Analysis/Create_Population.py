@@ -220,8 +220,9 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
         
         arr_text[indx%num_scripts] += newL + block_text
         indx += 1
-        if indx%Ntasks == 0:
-            arr_text[indx%num_scripts] += "wait \n\n"
+        if indx%(Ntasks*num_scripts) == 0:
+            for j in range(num_scripts):
+                arr_text[j] += "wait \n\n"
 
 
     for i in range(num_scripts):
