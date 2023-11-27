@@ -43,7 +43,7 @@ ftag = input_info[8]
 output_dir = "Output_Files/"
 if not os.path.exists(output_dir):
     os.mkdir(script_dir)
-pop_general = False
+pop_general = True
 
 script_dir = "scripts/"
 if not os.path.exists(script_dir):
