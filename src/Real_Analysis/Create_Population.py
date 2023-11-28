@@ -65,7 +65,7 @@ PhiQ=0.0
 eta_fill=0.2
 gagg=1.0e-12
 reflect_LFL = False
-delta_on_v = True
+delta_on_v = False
 compute_point = True
 return_width = True
 
