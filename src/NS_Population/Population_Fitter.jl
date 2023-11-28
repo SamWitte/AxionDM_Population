@@ -24,7 +24,7 @@ u = pyimport("astropy.units")
 pygedm = pyimport("pygedm")
 
 
-Random.seed!(1235)
+# Random.seed!(1235)
 
 
 function beaming_cut(P)
@@ -254,7 +254,7 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
     
     if isempty(out_pop)
         print("Empty?? \n")
-        return -Inf
+        return -Inf, 0.00
     else
         P_out = out_pop[:, 1]
         Pdot_out = out_pop[:, 2]
@@ -405,12 +405,13 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     # Nruns=10
     # print(x0, "\t", numwalkers, "\t", Nruns, "\n")
     chain, llhoodvals = AffineInvariantMCMC.sample(log_probability, numwalkers, x0, Nruns, 1)
-    # flatchain, flatllhoodvals = AffineInvariantMCMC.flattenmcmcarray(chain, llhoodvals)
-    
+    flatchain, flatllhoodvals = AffineInvariantMCMC.flattenmcmcarray(chain, llhoodvals)
+    # print(size(chain), "\t", size(llhoodvals), "\t", size(flatchain), "\n")
     aM = argmax(llhoodvals)
-    # print(flatllhoodvals[aM], "\t", flatchain[:, aM], "\n")
+    # print(aM, "\n")
+    # print(llhoodvals[aM], "\t", chain[:, aM], "\n")
     # return maxV, maxParams, chain
-    return [llhoodvals[aM], chain[:, aM], chain]
+    return [llhoodvals[aM], chain[:, aM], transpose(chain)]
 end
 
 

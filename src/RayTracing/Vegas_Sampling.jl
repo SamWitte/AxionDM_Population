@@ -45,13 +45,15 @@ function Vegas_sampler(theta_target, theta_err, Mass_a, θm, ωPul, B0, rNS; ret
             end
         end
     end
-    
+    # print("HERE \t", finalDist, "\n")
     theta_test = quantile!(finalDist, 0.01)
     if theta_test .>= theta_err
         # this is max err threshold...
         if theta_test .> 0.05
             theta_err = 0.05
             ncalls *= 2
+        elseif theta_test .< 0.02
+            theta_err = 0.02
         else
             theta_err = theta_test
         end
