@@ -405,12 +405,12 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     # Nruns=10
     # print(x0, "\t", numwalkers, "\t", Nruns, "\n")
     chain, llhoodvals = AffineInvariantMCMC.sample(log_probability, numwalkers, x0, Nruns, 1)
-    flatchain, flatllhoodvals = AffineInvariantMCMC.flattenmcmcarray(chain, llhoodvals)
+    # flatchain, flatllhoodvals = AffineInvariantMCMC.flattenmcmcarray(chain, llhoodvals)
     
-    aM = argmax(flatllhoodvals)
-    print(flatllhoodvals[aM], "\t", flatchain[:, aM], "\n")
+    aM = argmax(llhoodvals)
+    # print(flatllhoodvals[aM], "\t", flatchain[:, aM], "\n")
     # return maxV, maxParams, chain
-    return [flatllhoodvals[aM], flatchain[:, aM], chain]
+    return [llhoodvals[aM], chain[:, aM], chain]
 end
 
 
