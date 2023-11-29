@@ -56,7 +56,7 @@ all_files = glob.glob(f_out_P + "/*")
 
 def gauss_line_approx(erg, erg_c, erg_w, cutoff=1e-4):
     val = np.exp(- (erg - erg_c)**2 / (2 * erg_w**2)) / np.sqrt(2*np.pi*erg_w**2)
-    if val < cutoff
+    if val < cutoff:
         return 0.0
     else:
         return val
