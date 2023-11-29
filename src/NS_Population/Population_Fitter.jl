@@ -411,7 +411,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     # print(aM, "\n")
     # print(llhoodvals[aM], "\t", chain[:, aM], "\n")
     # return maxV, maxParams, chain
-    return [llhoodvals[aM], chain[:, aM], transpose(chain)]
+    return [llhoodvals[aM], chain[:, aM], transpose(flatchain)]
 end
 
 
