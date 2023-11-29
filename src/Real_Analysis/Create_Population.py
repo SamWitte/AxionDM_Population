@@ -6,6 +6,7 @@ from scipy.special import erf, erfinv
 import argparse
 from scipy import stats
 from scipy.integrate import solve_ivp, odeint
+from fileNaming import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--fIn',  help='Input file')
@@ -73,30 +74,6 @@ compute_point = True
 return_width = True
 
             
-
-
-def file_outName(output_dir, M_a, tag, idxN, tau_ohmic, B0, P0, sB, sP, ryoung, rold, return_pop=False):
-    
-    fileO = tag + "TauO_{:.2e}_B_{:.2f}_sB_{:.2f}_P_{:.2f}_sP_{:.2f}_".format(tau_ohmic, B0, sB, P0, sP)
-    if ryoung:
-        fileO += "_young_"
-    if rold:
-        fileO += "_old_"
-    
-    fileO += "/"
-    if not os.path.exists(output_dir + fileO):
-        os.mkdir(output_dir + fileO)
-        
-    if return_pop:
-        fileO += "Ma_{:.3e}/".format(M_a)
-        if not os.path.exists(output_dir + fileO):
-            os.mkdir(output_dir + fileO)
-        fileO += "Pop_{:.0f}/".format(idxN)
-        if not os.path.exists(output_dir + fileO):
-            os.mkdir(output_dir + fileO)
-    else:
-        fileO += "Population_Details.txt"
-    return output_dir + fileO
     
     
 def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag, young=True):
@@ -133,7 +110,7 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
         tmes, Bfinal, Pfinal, chifinal = evolve_pulsars(B_0, P, chi, age, N_time=1000, tau_ohm=tau_ohm)
         
         sve_array.append([i, B_0, P, chi, Bfinal[-1], Pfinal[-1], chifinal[-1], age/1e6, rho_DM, vDM, locNS[0], locNS[1], locNS[2], MassNS, radiusNS, view_angle, vNS])
-        # idx, B_ini [G], P_ini [s], thetaM_ini [rad], B_out [G], P_out [s], thetaM_out [rad], Age [Myr], rhoDM [GeV / cm^3], v0_DM [km /s], x [kpc], y [kpc], z [kpc], vNS_x [km/s], vNS_y [km/s], vNS_z [km/s], Mass NS [M_odot], radiusNS [km], viewing angle [rad]
+        # idx, B_ini [G], P_ini [s], thetaM_ini [rad], B_out [G], P_out [s], thetaM_out [rad], Age [Myr], rhoDM [GeV / cm^3], v0_DM [km /s], x [kpc], y [kpc], z [kpc],  Mass NS [M_odot], radiusNS [km], viewing angle [rad], vNS [km/s]
            
         if young:
             f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, True, False, return_pop=False)
