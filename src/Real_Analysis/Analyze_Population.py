@@ -39,7 +39,7 @@ ftag = input_info[8]
 output_dir = "Output_Files/"
 
 ### read general file
-if young:
+if run_young:
     f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, True, False, return_pop=False)
 else:
     f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, False, True, return_pop=False)
@@ -47,7 +47,7 @@ else:
 generalF = np.loadtxt(f_out)
 
 PopIdx=args.PopN
-if young:
+if run_young:
     f_out_P = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, True, False, return_pop=True)
 else:
     f_out_P = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, False, True, return_pop=True)
