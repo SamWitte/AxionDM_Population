@@ -66,9 +66,9 @@ def sample_theta():
     return np.arccos(1.0 - 2.0 * rand_vs)  # rads
 
 ### cycle through files and collect info
-erg_max_shift = 1e-2
+erg_max_shift = 1.0e-2
 num_pts = 10000
-erg_list = np.linspace(MassA * (1.0 - erg_max_shift), MassA * (1.0 - erg_max_shift), num_pts)
+erg_list = np.linspace(MassA * (1.0 - erg_max_shift), MassA * (1.0 + erg_max_shift), num_pts)
 fluxV = np.zeros_like(erg_list)
 
 hold_info = []
