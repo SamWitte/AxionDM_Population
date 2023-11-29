@@ -61,7 +61,7 @@ def gauss_line_approx(erg, erg_c, erg_w, cutoff=1e-4):
     else:
         return val
  
- def sample_theta():
+def sample_theta():
     rand_vs = np.random.rand()
     return np.arccos(1.0 - 2.0 * rand_vs)  # rads
 
