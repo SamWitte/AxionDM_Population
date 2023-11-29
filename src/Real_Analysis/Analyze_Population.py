@@ -60,7 +60,10 @@ def gauss_line_approx(erg, erg_c, erg_w, cutoff=1e-4):
         return 0.0
     else:
         return val
-    
+ 
+ def sample_theta():
+    rand_vs = np.random.rand()
+    return np.arccos(1.0 - 2.0 * rand_vs)  # rads
 
 ### cycle through files and collect info
 erg_max_shift = 1e-2
