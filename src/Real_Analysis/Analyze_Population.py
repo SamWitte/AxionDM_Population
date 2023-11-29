@@ -52,6 +52,9 @@ if run_young:
 else:
     f_out_P = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, False, True, return_pop=True)
 
+if os.path.exists(f_out_P + "/Combined_Flux.dat"):
+    os.remove(f_out_P + "/Combined_Flux.dat")
+
 all_files = glob.glob(f_out_P + "/*")
 
 def gauss_line_approx(erg, erg_c, erg_w, cutoff=1e-4):
