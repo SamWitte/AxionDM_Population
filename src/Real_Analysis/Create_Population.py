@@ -12,9 +12,11 @@ parser.add_argument('--fIn',  help='Input file')
 parser.add_argument('--PopN', type=int, default=1, help='Indx of population')
 parser.add_argument('--Ntasks', type=int, default=1, help='Indx of population')
 parser.add_argument('--Nscripts', type=int, default=1, help='Indx of population')
+
 args = parser.parse_args()
 
 Ntasks=args.Ntasks
+
 
 input_info = []
 with open(args.fIn) as f:
@@ -52,6 +54,7 @@ if not os.path.exists(script_dir):
 run_script_maker = True
 PopIdx=args.PopN
 num_scripts = args.Nscripts
+script_tag = "_Pop_{:.0f}_".format(PopIdx)
 
 ncall=7000
 nbins=10
@@ -153,7 +156,7 @@ def total_num_pulsars(young=True):
     
     
 
-def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, ncall, nbins, maxitrs, theta_err, mag_mod, B_DQ, PhiQ, ThetaQ, reflect_LFL=False, delta_on_v=True, compute_point=True, return_width=True, eta_fill=0.2,  gagg=1e-12, young=True):
+def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, ncall, nbins, maxitrs, theta_err, mag_mod, B_DQ, PhiQ, ThetaQ, reflect_LFL=False, delta_on_v=True, compute_point=True, return_width=True, eta_fill=0.2,  gagg=1e-12, young=True, script_tag="_"):
     arr_text = np.empty(num_scripts, dtype=object)
     
     if young:
@@ -238,7 +241,7 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
 
 
     for i in range(num_scripts):
-        text_file = open(script_dir + "/Script_Run_RT_{:.0f}.sh".format(i), "w")
+        text_file = open(script_dir + "/Script_Run_"+script_tag+"RT_{:.0f}.sh".format(i), "w")
         text_file.write(arr_text[i])
         text_file.close()
 
@@ -395,5 +398,5 @@ if pop_general:
     
 if run_script_maker:
     # Makes script that can then be used to run Vegas
-    script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, ncall, nbins, maxitrs, theta_err, mag_mod, B_DQ, PhiQ, ThetaQ, reflect_LFL=reflect_LFL, delta_on_v=delta_on_v, compute_point=compute_point, return_width=return_width, eta_fill=eta_fill, gagg=gagg, young=run_young)
+    script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, ncall, nbins, maxitrs, theta_err, mag_mod, B_DQ, PhiQ, ThetaQ, reflect_LFL=reflect_LFL, delta_on_v=delta_on_v, compute_point=compute_point, return_width=return_width, eta_fill=eta_fill, gagg=gagg, young=run_young, script_tag=script_tag)
 
