@@ -39,18 +39,14 @@ ftag = input_info[8]
 output_dir = "Output_Files/"
 
 ### read general file
-if run_young:
-    f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, True, False, return_pop=False)
-else:
-    f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, False, True, return_pop=False)
+
+f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=False)
     
 generalF = np.loadtxt(f_out)
 
 PopIdx=args.PopN
-if run_young:
-    f_out_P = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, True, False, return_pop=True)
-else:
-    f_out_P = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, False, True, return_pop=True)
+
+f_out_P = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=True)
 
 if os.path.exists(f_out_P + "/Combined_Flux.dat"):
     os.remove(f_out_P + "/Combined_Flux.dat")

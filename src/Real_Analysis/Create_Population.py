@@ -32,15 +32,7 @@ sig_B0 = float(input_info[2])
 P0_c = float(input_info[3])
 sig_P0 = float(input_info[4])
 tau_ohm = float(input_info[5])
-if input_info[6] == "1":
-    run_young = True
-else:
-    run_young = False
-    
-if input_info[7] == "1":
-    run_old = True
-else:
-    run_old = False
+
 
 ftag = input_info[8]
 
@@ -76,21 +68,32 @@ return_width = True
             
     
     
-def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag, young=True):
+def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag):
         
-    N_pulsars = total_num_pulsars(young=young)
-    print("Number of pulsars: \t", N_pulsars)
+    N_pulsars = total_num_pulsars(young=True)
+    N_pulsars_old = total_num_pulsars(young=False)
+    print("Number of pulsars: \t", N_pulsars + N_pulsars_old)
     sve_array = []
 
-    for i in range(N_pulsars):
+    for i in range(N_pulsars + N_pulsars_old):
+        if i < N_pulsars:
+            young = True
+        else:
+            young = False
+            
         alive = False
-        while not alive:
+        magnetar = False
+        while (not alive) and (not magnetar):
             B_0 = draw_field(B0_c, sig_B0)
             P = draw_period(P0_c, sig_P0)
             alive = ((B_0 / P**2)  > (0.34 * 1e12))
+            if B_0 > 4.4e13:
+                magnetar = True
+            
             
         chi = draw_chi()
         # position draw
+        
         phi_x, theta_x, r_x = sample_NS_position(young=young) # rx in kpc
     
         rho_DM = NFW(r_x)
@@ -112,10 +115,9 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
         sve_array.append([i, B_0, P, chi, Bfinal[-1], Pfinal[-1], chifinal[-1], age/1e6, rho_DM, vDM, locNS[0], locNS[1], locNS[2], MassNS, radiusNS, view_angle, vNS])
         # idx, B_ini [G], P_ini [s], thetaM_ini [rad], B_out [G], P_out [s], thetaM_out [rad], Age [Myr], rhoDM [GeV / cm^3], v0_DM [km /s], x [kpc], y [kpc], z [kpc],  Mass NS [M_odot], radiusNS [km], viewing angle [rad], vNS [km/s]
            
-        if young:
-            f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, True, False, return_pop=False)
-        else:
-            f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, False, True, return_pop=False)
+        
+        f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=False)
+        
             
     sve_array = np.asarray(sve_array)
     np.savetxt(f_out, sve_array, fmt='%.5e')
@@ -136,16 +138,14 @@ def total_num_pulsars(young=True):
 def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, ncall, nbins, maxitrs, theta_err, mag_mod, B_DQ, PhiQ, ThetaQ, reflect_LFL=False, delta_on_v=True, compute_point=True, return_width=True, eta_fill=0.2,  gagg=1e-12, young=True, script_tag="_"):
     arr_text = np.empty(num_scripts, dtype=object)
     
-    if young:
-        f_load = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, True, False, return_pop=False)
-    else:
-        f_load = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, False, True, return_pop=False)
+    
+    f_load = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=False)
+    
     data_in = np.loadtxt(f_load)
             
-    if young:
-        f_out = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, True, False, return_pop=True)
-    else:
-        f_out = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, False, True, return_pop=True)
+    
+    f_out = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=True)
+
     
     out_file = f_out
     # write into to each script
@@ -309,7 +309,13 @@ def draw_uniform_age(young=True):
     if young:
         return np.random.rand() * 30.0e6
     else:
-        return np.random.rand() * 10e9
+        age_good = False
+        while not age_good:
+            age = np.random.rand() * 10e9
+                if age > 30.0e6:
+                    age_good = True
+        return age
+        
         
 def nNS_dist(r): # normalized
     return r**0.07 * np.exp(-r / 0.5) * 0.468

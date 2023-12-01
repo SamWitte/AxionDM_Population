@@ -4,6 +4,4 @@
 0.30	# P_c
 0.50	# sig_P
 10.0e6	# Tau Ohm
-1	# young population
-0	# old population
 default_fit_ # ftag
