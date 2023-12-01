@@ -32,9 +32,7 @@ sig_B0 = float(input_info[2])
 P0_c = float(input_info[3])
 sig_P0 = float(input_info[4])
 tau_ohm = float(input_info[5])
-
-
-ftag = input_info[8]
+ftag = input_info[6]
 
 output_dir = "Output_Files/"
 if not os.path.exists(output_dir):
