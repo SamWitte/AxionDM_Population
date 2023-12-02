@@ -75,8 +75,8 @@ for i in range(len(all_files)):
     fileIn = np.loadtxt(all_files[i])
     indxP = int(all_files[i][all_files[i].find("/NS_") + 4: all_files[i].find("__Theta")])
     
-    vNS = generalF[indxP, -1]
-    dop_S = (vNS/2.998e5) * np.sin(sample_theta()) * np.sin(np.random.rand() * 2*np.pi)
+    dop_S = generalF[indxP, -1]
+    # dop_S = (vNS/2.998e5) * np.sin(sample_theta()) * np.sin(np.random.rand() * 2*np.pi)
     locNS = np.array([generalF[indxP, 10], generalF[indxP, 11], generalF[indxP, 12]])
     xE = np.array([0.0, 8.3, 0.0])
     dist_earth = np.sqrt(np.sum((xE - locNS)**2))

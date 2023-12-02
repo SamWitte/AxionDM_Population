@@ -110,7 +110,9 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
         age = draw_uniform_age(young=young)  # [yr]
         tmes, Bfinal, Pfinal, chifinal = evolve_pulsars(B_0, P, chi, age, N_time=1000, tau_ohm=tau_ohm)
         
-        sve_array.append([i, B_0, P, chi, Bfinal[-1], Pfinal[-1], chifinal[-1], age/1e6, rho_DM, vDM, locNS[0], locNS[1], locNS[2], MassNS, radiusNS, view_angle, vNS])
+        dop_S = (vNS/2.998e5) * np.sin(sample_theta()) * np.sin(np.random.rand() * 2*np.pi)
+        
+        sve_array.append([i, B_0, P, chi, Bfinal[-1], Pfinal[-1], chifinal[-1], age/1e6, rho_DM, vDM, locNS[0], locNS[1], locNS[2], MassNS, radiusNS, view_angle, dop_S])
         # idx, B_ini [G], P_ini [s], thetaM_ini [rad], B_out [G], P_out [s], thetaM_out [rad], Age [Myr], rhoDM [GeV / cm^3], v0_DM [km /s], x [kpc], y [kpc], z [kpc],  Mass NS [M_odot], radiusNS [km], viewing angle [rad], vNS [km/s]
            
         
@@ -214,9 +216,10 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
             for j in range(num_scripts):
                 arr_text[j] += "wait \n\n"
 
-
+    print("Number of pulsars that need to be run \t ", indx)
     for i in range(num_scripts):
         text_file = open(script_dir + "/Script_Run_"+script_tag+"RT_{:.0f}.sh".format(i), "w")
+        arr_text[i] += "wait \n"
         text_file.write(arr_text[i])
         text_file.close()
 
