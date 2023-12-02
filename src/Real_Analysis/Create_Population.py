@@ -47,10 +47,10 @@ PopIdx=args.PopN
 num_scripts = args.Nscripts
 script_tag = "_Pop_{:.0f}_".format(PopIdx)
 
-ncall=7000
-nbins=10
+ncall=3000
+nbins=3
 maxitrs=5
-theta_err=0.035
+theta_err=0.04
 
 mag_mod="Dipole"
 B_DQ=0.1
