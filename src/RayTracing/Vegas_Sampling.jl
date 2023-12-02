@@ -72,6 +72,7 @@ function Vegas_sampler(theta_target, theta_err, Mass_a, θm, ωPul, B0, rNS; ret
     if return_width
         output_W = zeros(ncalls);
         output_E = zeros(ncalls);
+        output_P = zeros(ncalls);
         # new_X = sample_from_adaptive_grid(vegas_result, ncalls)
         ndim = length(st)
         ymat = QuasiMonteCarlo.sample(ncalls, zeros(ndim), ones(ndim), QuasiMonteCarlo.UniformSample())
@@ -93,19 +94,22 @@ function Vegas_sampler(theta_target, theta_err, Mass_a, θm, ωPul, B0, rNS; ret
         
         
         for i in 1:ncalls
-            output_W_hold, output_E_hold = vegas_func(transpose(xmat)[i, :], maxR, Mass_a, θm, ωPul, B0, rNS; fix_time=fix_time, Mass_NS=Mass_NS, thick_surface=thick_surface, flat=flat, isotropic=isotropic, melrose=melrose, rho_DM=rho_DM, Ax_g=Ax_g, theta_mean=theta_target, theta_err=theta_err, phi_mean=phi_target, phi_err=phi_err, constrain_phi=constrain_phi, add_tau=add_tau, CLen_Scale=CLen_Scale, CP_one_D=CP_one_D, finalX_test=false, return_width=true, delta_on_v=delta_on_v, vmean_ax=vmean_ax);
+            output_W_hold, output_E_hold, output_Prob_hold = vegas_func(transpose(xmat)[i, :], maxR, Mass_a, θm, ωPul, B0, rNS; fix_time=fix_time, Mass_NS=Mass_NS, thick_surface=thick_surface, flat=flat, isotropic=isotropic, melrose=melrose, rho_DM=rho_DM, Ax_g=Ax_g, theta_mean=theta_target, theta_err=theta_err, phi_mean=phi_target, phi_err=phi_err, constrain_phi=constrain_phi, add_tau=add_tau, CLen_Scale=CLen_Scale, CP_one_D=CP_one_D, finalX_test=false, return_width=true, delta_on_v=delta_on_v, vmean_ax=vmean_ax);
             
             output_W[i] = output_W_hold;
             output_E[i] = output_E_hold;
+            
+            output_P[i] = output_Prob_hold[1];
         end
         
-        
+        meanP = sum(output_W .* Js .* output_P) ./ sum(output_W .* Js)
         meanE = sum(output_W .* Js .* output_E) ./ sum(output_W .* Js)
         std_E = sqrt.(sum(output_W .* Js .* (output_E .- meanE).^2) ./ sum(meanE .^2 .* output_W .* Js))
         # print("Final test \t", sum(output_W .* Js), "\t", vegas_result.integral_estimate, "\t", meanE, "\t", std_E, "\n")
-        return vegas_result.integral_estimate, vegas_result.standard_deviation, vegas_result.chi_squared_average, meanE, std_E
+        
+        return vegas_result.integral_estimate, vegas_result.standard_deviation, vegas_result.chi_squared_average, meanE, std_E, meanP
     else
-        return vegas_result.integral_estimate, vegas_result.standard_deviation, vegas_result.chi_squared_average, Mass_a, 1.0
+        return vegas_result.integral_estimate, vegas_result.standard_deviation, vegas_result.chi_squared_average, Mass_a, 1.0, 1.0
     end
 end
 
@@ -121,7 +125,7 @@ function vegas_func(input_samples, maxR, Mass_a, θm, ωPul, B0, rNS; fix_time=0
         if !return_width
             return 1e-100
         else
-            return 1e-100, 1.0
+            return 1e-100, 1.0, 1.0
         end
     end
     
@@ -215,6 +219,6 @@ function vegas_func(input_samples, maxR, Mass_a, θm, ωPul, B0, rNS; fix_time=0
         return sum(finalV)
     else
         Δω = tF[end];
-        return sum(finalV), Δω
+        return sum(finalV), Δω, Prob
     end
 end

@@ -39,18 +39,14 @@ ftag = input_info[8]
 output_dir = "Output_Files/"
 
 ### read general file
-if run_young:
-    f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, True, False, return_pop=False)
-else:
-    f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, False, True, return_pop=False)
+
+f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=False)
     
 generalF = np.loadtxt(f_out)
 
 PopIdx=args.PopN
-if run_young:
-    f_out_P = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, True, False, return_pop=True)
-else:
-    f_out_P = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, False, True, return_pop=True)
+
+f_out_P = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=True)
 
 if os.path.exists(f_out_P + "/Combined_Flux.dat"):
     os.remove(f_out_P + "/Combined_Flux.dat")
@@ -79,8 +75,8 @@ for i in range(len(all_files)):
     fileIn = np.loadtxt(all_files[i])
     indxP = int(all_files[i][all_files[i].find("/NS_") + 4: all_files[i].find("__Theta")])
     
-    vNS = generalF[indxP, -1]
-    dop_S = (vNS/2.998e5) * np.sin(sample_theta()) * np.sin(np.random.rand() * 2*np.pi)
+    dop_S = generalF[indxP, -1]
+    # dop_S = (vNS/2.998e5) * np.sin(sample_theta()) * np.sin(np.random.rand() * 2*np.pi)
     locNS = np.array([generalF[indxP, 10], generalF[indxP, 11], generalF[indxP, 12]])
     xE = np.array([0.0, 8.3, 0.0])
     dist_earth = np.sqrt(np.sum((xE - locNS)**2))
