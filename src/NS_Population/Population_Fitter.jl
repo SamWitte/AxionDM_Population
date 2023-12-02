@@ -411,7 +411,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     # print(aM, "\n")
     # print(llhoodvals[aM], "\t", chain[:, aM], "\n")
     # return maxV, maxParams, chain
-    return [llhoodvals[aM], chain[:, aM], transpose(flatchain)]
+    return [llhoodvals[aM], chain[:, aM], transpose(flatchain), flatllhoodvals]
 end
 
 
@@ -462,9 +462,11 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
             out_bf = OUTALL[2]
             push!(out_bf, OUTALL[1])
             full_chain = OUTALL[3]
+            likeVals = OUTALL[4]
             
             writedlm("output_fits/Best_Fit_"*fileName*".dat", out_bf)
             writedlm("output_fits/MCMC_"*fileName*".dat", full_chain)
+            writedlm("output_fits/LLIKE_"*fileName*".dat", likeVals)
         else
             outputTable = hard_scan(true_pop, rval, Nsamples, max_T=max_T, Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig)
             if temp
