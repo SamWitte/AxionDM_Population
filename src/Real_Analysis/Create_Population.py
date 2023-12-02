@@ -37,7 +37,7 @@ ftag = input_info[6]
 output_dir = "Output_Files/"
 if not os.path.exists(output_dir):
     os.mkdir(output_dir)
-pop_general = False
+pop_general = True
 
 script_dir = "scripts/"
 if not os.path.exists(script_dir):
@@ -135,7 +135,7 @@ def total_num_pulsars(young=True):
     
     
 
-def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, ncall, nbins, maxitrs, theta_err, mag_mod, B_DQ, PhiQ, ThetaQ, reflect_LFL=False, delta_on_v=True, compute_point=True, return_width=True, eta_fill=0.2,  gagg=1e-12, young=True, script_tag="_"):
+def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, ncall, nbins, maxitrs, theta_err, mag_mod, B_DQ, PhiQ, ThetaQ, reflect_LFL=False, delta_on_v=True, compute_point=True, return_width=True, eta_fill=0.2,  gagg=1e-12, script_tag="_"):
     arr_text = np.empty(num_scripts, dtype=object)
     
     
@@ -313,8 +313,8 @@ def draw_uniform_age(young=True):
         age_good = False
         while not age_good:
             age = np.random.rand() * 10e9
-                if age > 30.0e6:
-                    age_good = True
+            if age > 30.0e6:
+                age_good = True
         return age
         
         
@@ -378,9 +378,9 @@ def v0_DM(r):
 
 if pop_general:
     # Makes initial input that is then used to generate server run script....
-    run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag, young=True)
+    run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag)
     
 if run_script_maker:
     # Makes script that can then be used to run Vegas
-    script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, ncall, nbins, maxitrs, theta_err, mag_mod, B_DQ, PhiQ, ThetaQ, reflect_LFL=reflect_LFL, delta_on_v=delta_on_v, compute_point=compute_point, return_width=return_width, eta_fill=eta_fill, gagg=gagg, young=run_young, script_tag=script_tag)
+    script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, ncall, nbins, maxitrs, theta_err, mag_mod, B_DQ, PhiQ, ThetaQ, reflect_LFL=reflect_LFL, delta_on_v=delta_on_v, compute_point=compute_point, return_width=return_width, eta_fill=eta_fill, gagg=gagg, script_tag=script_tag)
 
