@@ -239,7 +239,8 @@ return_width = prsd_args["return_width"]
 
 ### sve
 sve_output=true
-output_arr = zeros(length(theta_target), 5)
+# output_arr = zeros(length(theta_target), 5)
+output_arr = []
 compute_point = prsd_args["compute_point"]
 
 time0=Dates.now()
@@ -248,9 +249,13 @@ print("number threads: ", Threads.nthreads(), "\n")
 
 
 Threads.@threads for i = 1:length(theta_target)
-    finalV, std_v, chi2_v, meanE, stdE, meanP = Vegas_sampler(theta_target[i], theta_err, Mass_a, θm, ωPul, B0, rNS; return_width=return_width, maxiter=maxiter, debug=debug, nbins=nbins, ncalls=ncalls, constrain_phi=constrain_phi, phi_target=phi_target, phi_err=phi_err, fix_time=fix_time, rho_DM=rho_DM, vmean_ax=vmean_ax, Ax_g=Ax_g, Mass_NS=Mass_NS, thick_surface=thick_surface, flat=flat, isotropic=isotropic, melrose=melrose, ode_err=ode_err, add_tau=add_tau, CLen_Scale=CLen_Scale, plasma_mod=plasma_mod, mag_mod=mag_mod, lambdaM=lambdaM, psi=psi, delta_on_v=delta_on_v, θmQ=θmQ, phiQ=phiQ, B_DQ=B_DQ, null_fill=null_fill, reflect_LFL=reflect_LFL, dead=dead, dead_rmax=dead_rmax)
-    
-    output_arr[i, :] = [theta_target[i] finalV meanE stdE meanP]
+    weights, ergs, probs = Vegas_sampler(theta_target[i], theta_err, Mass_a, θm, ωPul, B0, rNS; return_width=return_width, maxiter=maxiter, debug=debug, nbins=nbins, ncalls=ncalls, constrain_phi=constrain_phi, phi_target=phi_target, phi_err=phi_err, fix_time=fix_time, rho_DM=rho_DM, vmean_ax=vmean_ax, Ax_g=Ax_g, Mass_NS=Mass_NS, thick_surface=thick_surface, flat=flat, isotropic=isotropic, melrose=melrose, ode_err=ode_err, add_tau=add_tau, CLen_Scale=CLen_Scale, plasma_mod=plasma_mod, mag_mod=mag_mod, lambdaM=lambdaM, psi=psi, delta_on_v=delta_on_v, θmQ=θmQ, phiQ=phiQ, B_DQ=B_DQ, null_fill=null_fill, reflect_LFL=reflect_LFL, dead=dead, dead_rmax=dead_rmax, return_summary=false)
+    for j in 1:length(ergs)
+        if weights[j] .> 1e-10
+            push!(output_arr, [weights[j] ergs[j] probs[j]])
+        end
+    end
+#    output_arr[i, :] = [theta_target[i] finalV meanE stdE meanP]
 end
 
 

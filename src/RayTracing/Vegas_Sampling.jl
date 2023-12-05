@@ -11,7 +11,7 @@ using Statistics
 RT = RayTracerGR; # define ray tracer module
 
 
-function Vegas_sampler(theta_target, theta_err, Mass_a, θm, ωPul, B0, rNS; return_width=false, maxiter=10, debug=false, nbins=4, ncalls=1000, constrain_phi=false, phi_target=0.0, phi_err=0.05, fix_time=0.0, Mass_NS=1.0, thick_surface=false, flat=true, isotropic=false, melrose=false, ode_err=1e-7, rho_DM=0.45, vmean_ax=220.0, Ax_g=1e-12, add_tau=false, CLen_Scale=false, CP_one_D=false, plasma_mod="GJ", mag_mod="Dipole", lambdaM=1.0, psi=0.0, delta_on_v=true, θmQ=0.0, phiQ=0.0, B_DQ=0.0, ray_trace=true, reflect_LFL=false, null_fill=0.0, dead=false, dead_rmax=30.0, Ntest_ini=1000)
+function Vegas_sampler(theta_target, theta_err, Mass_a, θm, ωPul, B0, rNS; return_width=false, maxiter=10, debug=false, nbins=4, ncalls=1000, constrain_phi=false, phi_target=0.0, phi_err=0.05, fix_time=0.0, Mass_NS=1.0, thick_surface=false, flat=true, isotropic=false, melrose=false, ode_err=1e-7, rho_DM=0.45, vmean_ax=220.0, Ax_g=1e-12, add_tau=false, CLen_Scale=false, CP_one_D=false, plasma_mod="GJ", mag_mod="Dipole", lambdaM=1.0, psi=0.0, delta_on_v=true, θmQ=0.0, phiQ=0.0, B_DQ=0.0, ray_trace=true, reflect_LFL=false, null_fill=0.0, dead=false, dead_rmax=30.0, Ntest_ini=1000, return_summary=true)
 
     rho_twist = false
     if mag_mod == "Magnetar"
@@ -102,12 +102,16 @@ function Vegas_sampler(theta_target, theta_err, Mass_a, θm, ωPul, B0, rNS; ret
             output_P[i] = output_Prob_hold[1];
         end
         
-        meanP = sum(output_W .* Js .* output_P) ./ sum(output_W .* Js)
-        meanE = sum(output_W .* Js .* output_E) ./ sum(output_W .* Js)
-        std_E = sqrt.(sum(output_W .* Js .* (output_E .- meanE).^2) ./ sum(meanE .^2 .* output_W .* Js))
-        # print("Final test \t", sum(output_W .* Js), "\t", vegas_result.integral_estimate, "\t", meanE, "\t", std_E, "\n")
-        
-        return vegas_result.integral_estimate, vegas_result.standard_deviation, vegas_result.chi_squared_average, meanE, std_E, meanP
+        if return_summary
+            meanP = sum(output_W .* Js .* output_P) ./ sum(output_W .* Js)
+            meanE = sum(output_W .* Js .* output_E) ./ sum(output_W .* Js)
+            std_E = sqrt.(sum(output_W .* Js .* (output_E .- meanE).^2) ./ sum(meanE .^2 .* output_W .* Js))
+            print("Final test \t", sum(output_W .* Js) ./ ncalls, "\t", vegas_result.integral_estimate, "\t", meanE, "\t", std_E, "\n")
+            
+            return vegas_result.integral_estimate, vegas_result.standard_deviation, vegas_result.chi_squared_average, meanE, std_E, meanP
+        else
+            return (output_W .* Js) ./ ncalls, output_E, output_P
+        end
     else
         return vegas_result.integral_estimate, vegas_result.standard_deviation, vegas_result.chi_squared_average, Mass_a, 1.0, 1.0
     end
