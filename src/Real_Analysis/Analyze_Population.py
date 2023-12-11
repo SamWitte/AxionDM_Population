@@ -81,9 +81,11 @@ for i in range(len(all_files)):
     xE = np.array([0.0, 8.3, 0.0])
     dist_earth = np.sqrt(np.sum((xE - locNS)**2))
         
-    flux = fileIn[1] * (1.60e-12) / dist_earth**2 * (3.24e-22)**2 / 1e-23 # Jy-Hz
-    erg_central = -fileIn[2] * (1 + dop_S)
-    hold_info.append([indxP, flux, erg_central, fileIn[3] * erg_central])
+    flux_weight = fileIn[:, 0] * (1.60e-12) / dist_earth**2 * (3.24e-22)**2 / 1e-23 # Jy-Hz
+    erg_list = -fileIn[:, 1] * (1 + dop_S)
+    # hold_info.append([indxP, flux, erg_central, fileIn[3] * erg_central])
+    for j in range(len(erg_list)):
+        hold_info.append([indxP, flux_weight[j], erg_list[j]])
     
 hold_info = np.asarray(hold_info)
 for i in range(num_pts):
