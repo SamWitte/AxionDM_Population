@@ -82,13 +82,12 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
         young = False
         
         alive = False
-        magnetar = False
-        while (not alive) and (not magnetar):
+        
+        while (not alive):
             B_0 = draw_field(B0_c, sig_B0)
             P = draw_period(P0_c, sig_P0)
             alive = ((B_0 / P**2)  > (0.34 * 1e12))
-            if B_0 > 4.4e13:
-                magnetar = True
+            
             
         if i%1000 ==0:
             print("{:d} of {:d}".format(i, N_pulsars + N_pulsars_old))
@@ -114,6 +113,8 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
         age = draw_uniform_age(young=young)  # [yr]
         # print("pre evol")
         tmes, Bfinal, Pfinal, chifinal = evolve_pulsars(B_0, P, chi, age, N_time=1000, tau_ohm=tau_ohm)
+        
+
         # print("{:.2e}   {:.2e}   {:.3f}   {:.3f}".format(tmes[-1], Bfinal, Pfinal[-1], chifinal[-1]))
         dop_S = (vNS/2.998e5) * np.sin(sample_theta()) * np.sin(np.random.rand() * 2*np.pi)
         
@@ -121,9 +122,8 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
         # idx, B_ini [G], P_ini [s], thetaM_ini [rad], B_out [G], P_out [s], thetaM_out [rad], Age [Myr], rhoDM [GeV / cm^3], v0_DM [km /s], x [kpc], y [kpc], z [kpc],  Mass NS [M_odot], radiusNS [km], viewing angle [rad], vNS [km/s]
            
         
-        f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=False)
+    f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=False)
         
-            
     sve_array = np.asarray(sve_array)
     np.savetxt(f_out, sve_array, fmt='%.5e')
         
@@ -206,6 +206,9 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
         # [i, B_0, P, chi, Bfinal[-1], Pfinal[-1], chifinal[-1], age/1e6, rho_DM, v0_DM, locNS[0], locNS[1], locNS[2], vNS[0], vNS[1], vNS[2], MassNS, radiusNS, view_angle]
         
         if check_conversion(MassA, data_in[i, 4], data_in[i, 5], data_in[i, 6]) == 0:
+            continue
+            
+        if data_in[i, 4] > 4.4e13:
             continue
         
         newL = "B0={:.3e} \n".format(data_in[i, 4])
