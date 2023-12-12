@@ -17,5 +17,5 @@ def file_outName(output_dir, M_a, tag, idxN, tau_ohmic, B0, P0, sB, sP, return_p
         if not os.path.exists(output_dir + fileO):
             os.mkdir(output_dir + fileO)
     else:
-        fileO += "Population_Details.txt"
+        fileO += "Population_Details"+ftag+".txt"
     return output_dir + fileO
