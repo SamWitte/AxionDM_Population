@@ -44,7 +44,7 @@ function Lum(P, Pdot, dist; alpha=0.48, muLcorr=0.0, sigLcorr=0.8)
 end
 
 function sample_location(age; diskH=0.5, diskR=10.0)
-    hh = rand(range(-diskH, diskH, 1000))
+    hh = rand(range(-diskH, stop=diskH, length=1000))
     rr = diskR * sqrt(rand())
     phi_loc = 2 * pi * rand()
     x_cart = [rr * cos(phi_loc), rr * sin(phi_loc), hh]
