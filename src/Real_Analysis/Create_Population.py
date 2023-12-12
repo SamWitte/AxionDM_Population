@@ -69,7 +69,7 @@ return_width = True
 def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag):
         
     N_pulsars = total_num_pulsars(young=True)
-    N_pulsars_old = total_num_pulsars(young=False)
+    N_pulsars_old = total_num_pulsars(young=False, tau_ohm=tau_ohm)
     print("Number of pulsars: \t", N_pulsars + N_pulsars_old)
     sve_array = []
 
@@ -79,6 +79,8 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
         else:
             young = False
             
+        young = False
+        
         alive = False
         magnetar = False
         while (not alive) and (not magnetar):
@@ -88,6 +90,8 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
             if B_0 > 4.4e13:
                 magnetar = True
             
+        if i%1 ==0:
+            print("{:d} of {:d}".format(i, N_pulsars + N_pulsars_old))
             
         chi = draw_chi()
         # position draw
@@ -108,11 +112,12 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
         view_angle = draw_chi()
 
         age = draw_uniform_age(young=young)  # [yr]
+        # print("pre evol")
         tmes, Bfinal, Pfinal, chifinal = evolve_pulsars(B_0, P, chi, age, N_time=1000, tau_ohm=tau_ohm)
-        
+        # print("{:.2e}   {:.2e}   {:.3f}   {:.3f}".format(tmes[-1], Bfinal, Pfinal[-1], chifinal[-1]))
         dop_S = (vNS/2.998e5) * np.sin(sample_theta()) * np.sin(np.random.rand() * 2*np.pi)
         
-        sve_array.append([i, B_0, P, chi, Bfinal[-1], Pfinal[-1], chifinal[-1], age/1e6, rho_DM, vDM, locNS[0], locNS[1], locNS[2], MassNS, radiusNS, view_angle, dop_S])
+        sve_array.append([i, B_0, P, chi, Bfinal, Pfinal[-1], chifinal[-1], age/1e6, rho_DM, vDM, locNS[0], locNS[1], locNS[2], MassNS, radiusNS, view_angle, dop_S])
         # idx, B_ini [G], P_ini [s], thetaM_ini [rad], B_out [G], P_out [s], thetaM_out [rad], Age [Myr], rhoDM [GeV / cm^3], v0_DM [km /s], x [kpc], y [kpc], z [kpc],  Mass NS [M_odot], radiusNS [km], viewing angle [rad], vNS [km/s]
            
         
@@ -124,12 +129,15 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
         
     return
 
-def total_num_pulsars(young=True):
+def total_num_pulsars(young=True, tau_ohm=10.0e6):
     # max_age [Myr]
     if young:
         total_num = 5.4e-5 * 30.0e6 # assume rate of 5.4e-5 / year, and consider "young population" only for 30 Myr
     else:
-        total_num = 345050
+        if tau_ohm < 1e9:
+            total_num = 345050 * ((tau_ohm * 10.0 - 30.0e6) / 10.0e9)
+        else:
+            total_num = 345050
         
     return np.random.poisson(int(total_num))
     
@@ -227,13 +235,13 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
 
 
 
-def RHS(t, y, beta=6e-40, tau_ohm=10.0e6):
+def RHS(t, y, beta=6e-40, tau_ohm=10.0e6, B_0=1.0e12):
     # Initial values
     
-    logB = y[0]
-    B = np.exp(logB)
-    P = y[1]
-    chi = y[2]
+    # logB = y[0]
+    B = B_0 * np.exp(- t / tau_ohm)
+    P = y[0]
+    chi = y[1]
     
     # check death line
     alive = ((B / P**2)  > (0.34 * 1e12))
@@ -252,22 +260,24 @@ def RHS(t, y, beta=6e-40, tau_ohm=10.0e6):
     # Chi Evolution
     dChidT = -1.0 * beta * B**2 / P**2 * np.abs(np.sin(chi) * np.cos(chi))
     
-    return [dLogBdT ,  3.1536e+7*dPdT, 3.1536e+7*dChidT]  # 1/ yr
+#    return [dLogBdT ,  3.1536e+7*dPdT, 3.1536e+7*dChidT]  # 1/ yr
+    return [3.1536e+7*dPdT, 3.1536e+7*dChidT]  # 1/ yr
     
 def evolve_pulsars(B_0, P, chi, age, N_time=1e5, tau_ohm=10.0e6):
     
     times = np.geomspace(1, age, int(N_time))
 
-    y0=[np.log(B_0), P, chi]
+    y0=[P, chi]
     # print("In: ", [(B_0) / 1e12, P, chi], times)
 
-    sol_tot = solve_ivp(RHS, [times[0], times[-1]], y0, t_eval=times, args=(6e-40, tau_ohm, ), max_step=10000.0)
+    sol_tot = solve_ivp(RHS, [times[0], times[-1]], y0, t_eval=times, args=(6e-40, tau_ohm, B_0, ), max_step=10000.0)
     # sol_tot = odeint(RHS, y0, times, args=(6e-40, tau_ohm, ), max_step=)
     sol = np.asarray(sol_tot.y)
     
-    sol[0,:] = np.exp(sol[0,:])
+    # sol[0,:] = np.exp(sol[0,:])
+    Btoday = B_0 * np.exp(-times[-1] / tau_ohm)
     # print("Out: ", sol[:, -1])
-    return times, sol[0,:], sol[1,:], sol[2,:]
+    return times, Btoday, sol[0,:], sol[1,:]
         
 
         
@@ -306,13 +316,14 @@ def draw_chi():
     # return np.arccos(stats.uniform.rvs(loc = -1, scale = 2))
     return np.arccos(1.0 - 2.0 * np.random.rand())
 
-def draw_uniform_age(young=True):
+def draw_uniform_age(young=True, tau_ohm=10.0e6):
     if young:
         return np.random.rand() * 30.0e6
     else:
+        max_age = np.min([tau_ohm * 10.0, 10e9])
         age_good = False
         while not age_good:
-            age = np.random.rand() * 10e9
+            age = np.random.rand() * max_age
             if age > 30.0e6:
                 age_good = True
         return age
