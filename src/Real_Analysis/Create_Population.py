@@ -90,7 +90,7 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
             if B_0 > 4.4e13:
                 magnetar = True
             
-        if i%1 ==0:
+        if i%1000 ==0:
             print("{:d} of {:d}".format(i, N_pulsars + N_pulsars_old))
             
         chi = draw_chi()
