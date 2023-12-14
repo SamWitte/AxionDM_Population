@@ -132,18 +132,14 @@ function RHS!(du, u, Mvars, t)
     return
 end
 
-function draw_Bfield_lognorm()
-    mu_B = 12.95
-    sig_B = 0.55
-    return 10^(mu_B + sqrt(2) * sig_B * erfinv(2 * rand() - 1.0))
+function draw_Bfield_lognorm(;muB=12.95, sigB=0.55)
+    return 10 .^(muB .+ sqrt(2) .* sigB .* erfinv(2 * rand() .- 1.0))
 end
 
-function draw_period_norm()
-    mu_P = 0.3
-    sig_P = 0.15
+function draw_period_norm(;mu_P=0.3, sig_P=0.15)
     val = mu_P + sqrt(2) * sig_P * erfinv(2 * rand() - 1.0)
     if val <= 0
-        return draw_period_norm()
+        return draw_period_norm(mu_P=mu_P, sig_P=sig_P)
     else
         return val
     end
@@ -229,21 +225,33 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
 end
 
 
-function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13)
-    mu_P, mu_B, sig_P, sig_B, cov_PB = theta
-    mean = [mu_P, mu_B]
-    # cov = [sig_P.^2 cov_PB.^2; cov_PB.^2 sig_B.^2]
-    cov = [sig_P.^2 0.0; 0.0 sig_B.^2]
-    # print("here 1\n")
-    # print("here 2\n\n")
-    dist = MvNormal(mean, cov)
-    out_samps = rand(dist, Nsamples)'
+function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true)
+    
+    if gauss_approx
+        mu_P, mu_B, sig_P, sig_B = theta
+        mean = [mu_P, mu_B]
+        cov = [sig_P.^2 0.0; 0.0 sig_B.^2]
+        # print("here 1\n")
+        # print("here 2\n\n")
+        dist = MvNormal(mean, cov)
+        out_samps = rand(dist, Nsamples)'
+        P_in = abs.(out_samps[:,1]) #
+        B_in = 10 .^(out_samps[:,2])
+        data_in = hcat(B_in, P_in)
+    else
+        Pbeta, mu_B, Pmax, sig_B = theta
+        data_in = zeros(Nsamples, 2)
+        for i in 1:Nsamples
+            # Ptemp = (Pmax .^ (1 .+ Pbeta) .* rand()).^(1.0 ./ (1.0 .+ Pbeta))
+                            Pabsmin=1e-3
+            Ptemp = ((-Pmax.^(1 .+ Pbeta) .+ Pabsmin .^(1 .+ Pbeta)) .* (- Pabsmin.^(1 .+ Pbeta) ./ (Pmax.^(1 .+ Pbeta) .- Pabsmin.^(1 .+ Pbeta)) .- rand())).^(1.0 ./ (1.0 .+ Pbeta))
+            Btemp = draw_Bfield_lognorm(muB=mu_B, sigB=sig_B)
+            data_in[i, :] = [Btemp Ptemp]
+        end
+    end
     
     
-    P_in = abs.(out_samps[:,1]) # 10 .^(out_samps[:,1])
-    B_in = 10 .^(out_samps[:,2])
-    data_in = hcat(B_in, P_in)
-    ages = rand(1:max_T, length(B_in))
+    ages = rand(1:max_T, length(data_in[:, 1]))
     
     out_pop = simulate_pop(Nsamples, ages, beta=6e-40, tau_Ohm=tau_Ohm, width_threshold=0.1, pulsar_data=data_in, B_min=B_minT, B_max=B_maxT)
     num_out = length(out_pop[:,1])
@@ -353,23 +361,29 @@ function hard_scan(real_samples, rval, Nsamples; max_T=1e7, Pmin=0.05, Pmax=0.75
     return qval_L
 end
 
-function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh=0.6, Plow=0.02, LBhigh=log10.(3e13), LBlow=log10.(2e12), sPlow=0.05, sPhigh=0.7, sBlow=0.1, sBhigh=1.2, numwalkers=5, Nruns=1000, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13)
+function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh=0.6, Plow=0.02, LBhigh=log10.(3e13), LBlow=log10.(2e12), sPlow=0.05, sPhigh=0.7, sBlow=0.1, sBhigh=1.2, numwalkers=5, Nruns=1000, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true)
     
     maxV = 1e20
     maxParams = nothing
     
     function prior(theta)
-        Pv, Bv, sP, sB, cov = theta
-        # Pv, Bv, sP, sB = theta
         
-        if (Plow .< Pv .< Phigh)&&(LBlow .< Bv .< LBhigh)&&(sPlow .< sP .< sPhigh)&&(sBlow .< sB .< sBhigh)&&(0.0 .< cov .< 0.5)
-            return 0.0
+        if gauss_approx
+            Pv, Bv, sP, sB = theta
+            if (Plow .< Pv .< Phigh)&&(LBlow .< Bv .< LBhigh)&&(sPlow .< sP .< sPhigh)&&(sBlow .< sB .< sBhigh)
+                return 0.0
+            end
+        else
+            P_beta, Bv, Pmax, sB = theta
+            if (-3.0 .< P_beta .< 0.0)&&(LBlow .< Bv .< LBhigh)&&(0.1 .< Pmax .< 1.0)&&(sBlow .< sB .< sBhigh)
+                return 0.0
+            end
         end
         return -Inf
     end
     
     function loss(xIn)
-        Dval, qval = likelihood_func(xIn, real_samples, rval, Nsamples, max_T, tau_Ohm=tau_Ohm, B_minT=B_minT, B_maxT=B_maxT)
+        Dval, qval = likelihood_func(xIn, real_samples, rval, Nsamples, max_T, tau_Ohm=tau_Ohm, B_minT=B_minT, B_maxT=B_maxT, gauss_approx=gauss_approx)
         # return Dval
         print(log.(qval), "\t", xIn, "\n")
         return log.(qval)
@@ -387,41 +401,53 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     
     
     # numwalkers=5
-    x0 = rand(5, numwalkers)
+    x0 = rand(4, numwalkers)
     
-    len_P = abs.(Phigh - Plow )
-    len_B = abs.(LBhigh .- LBlow)
-    len_sP = abs.(sPlow .- sPhigh)
-    len_sB = abs.(sBlow .- sBhigh)
-    
-    x0[1, :] .*= len_P
-    x0[1, :] .+= Plow
-    
-    x0[2, :] .*= len_B
-    x0[2, :] .+= LBlow
-    
-    x0[3, :] .*= len_sP
-    x0[3, :] .+= sPlow
-    
-    x0[4, :] .*= len_sB
-    x0[4, :] .+= sBlow
-    
-    x0[5, :] .*= 0.5
-    
-    # Nruns=10
-    # print(x0, "\t", numwalkers, "\t", Nruns, "\n")
+    if gauss_approx
+        len_P = abs.(Phigh - Plow )
+        len_B = abs.(LBhigh .- LBlow)
+        len_sP = abs.(sPlow .- sPhigh)
+        len_sB = abs.(sBlow .- sBhigh)
+        
+        x0[1, :] .*= len_P
+        x0[1, :] .+= Plow
+        
+        x0[2, :] .*= len_B
+        x0[2, :] .+= LBlow
+        
+        x0[3, :] .*= len_sP
+        x0[3, :] .+= sPlow
+        
+        x0[4, :] .*= len_sB
+        x0[4, :] .+= sBlow
+        
+
+    else
+        
+        len_B = abs.(LBhigh .- LBlow)
+        len_sB = abs.(sBlow .- sBhigh)
+        
+        x0[2, :] .*= len_B
+        x0[2, :] .+= LBlow
+        x0[4, :] .*= len_sB
+        x0[4, :] .+= sBlow
+        
+        len_Pbeta = 3.0
+        len_Pmax = (1.0 - 0.1)
+        x0[1, :] .*= len_Pbeta
+        x0[1, :] .+= -3.0
+        x0[3, :] .*= len_Pmax
+        x0[3, :] .+= 0.1
+
+    end
     chain, llhoodvals = AffineInvariantMCMC.sample(log_probability, numwalkers, x0, Nruns, 1)
     flatchain, flatllhoodvals = AffineInvariantMCMC.flattenmcmcarray(chain, llhoodvals)
-    # print(size(chain), "\t", size(llhoodvals), "\t", size(flatchain), "\n")
     aM = argmax(llhoodvals)
-    # print(aM, "\n")
-    # print(llhoodvals[aM], "\t", chain[:, aM], "\n")
-    # return maxV, maxParams, chain
     return [llhoodvals[aM], chain[:, aM], transpose(flatchain), flatllhoodvals]
 end
 
 
-function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65, 0.0], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=true, minimizeIt=false, numwalkers=5, Nruns=1)
+function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=true, minimizeIt=false, numwalkers=5, Nruns=1, gauss_approx=true)
 
     print("Tau \t", tau_ohmic, "\n")
     max_T = max_T_f * tau_ohmic
@@ -464,7 +490,7 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
 
     if run_analysis
         if minimizeIt
-            OUTALL = minimization_scan(true_pop, rval; max_T=max_T, Nsamples=Nsamples, numwalkers=numwalkers, Nruns=Nruns, tau_Ohm=tau_ohmic, B_minT=B_minT, B_maxT=B_maxT)
+            OUTALL = minimization_scan(true_pop, rval; max_T=max_T, Nsamples=Nsamples, numwalkers=numwalkers, Nruns=Nruns, tau_Ohm=tau_ohmic, B_minT=B_minT, B_maxT=B_maxT, gauss_approx=gauss_approx)
             out_bf = OUTALL[2]
             push!(out_bf, OUTALL[1])
             full_chain = OUTALL[3]
@@ -485,21 +511,38 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
     end
 
     if run_plot_data
-        mu_P, mu_B, sig_P, sig_B, cov_PB = xIn
-        mean = [mu_P, mu_B]
-        cov = [sig_P cov_PB; cov_PB sig_B]
-        # cov = [sig_P 0.0; cov_PB 0.0]
+        if gauss_approx
+            mu_P, mu_B, sig_P, sig_B = xIn
+            mean = [mu_P, mu_B]
+            cov = [sig_P 0.0; 0.0 sig_B]
+            
+            
+            dist = MvNormal(mean, cov)
+            out_samps = rand(dist, Nsamples)'
+
+            
+            P_in = abs.(out_samps[:,1]) #
+            B_in = 10 .^(out_samps[:,2])
+            data_in = hcat(B_in, P_in)
+        else
+            Pbeta, mu_B, Pmax, sig_B = xIn
+            data_in = zeros(Nsamples, 2)
+            for i in 1:Nsamples
+                # Ptemp = (Pmax .^ (1 .+ Pbeta) .* rand()).^(1.0 ./ (1.0 .+ Pbeta))
+                Pabsmin=1e-3
+                Ptemp = ((-Pmax.^(1 .+ Pbeta) .+ Pabsmin .^(1 .+ Pbeta)) .* (- Pabsmin.^(1 .+ Pbeta) ./ (Pmax.^(1 .+ Pbeta) .- Pabsmin.^(1 .+ Pbeta)) .- rand())).^(1.0 ./ (1.0 .+ Pbeta))
+                Btemp = draw_Bfield_lognorm(muB=mu_B, sigB=sig_B)
+                data_in[i, :] = [Ptemp Btemp]
+            end
+            
+        end
         
-        dist = MvNormal(mean, cov)
-        out_samps = rand(dist, Nsamples)'
+        
 
         
-        P_in = abs.(out_samps[:,1]) # 10 .^(out_samps[:,1])
-        B_in = 10 .^(out_samps[:,2])
-        data_in = hcat(B_in, P_in)
-        ages = rand(1:max_T, length(B_in))
+        ages = rand(1:max_T, length(data_in[:, 1]))
         
-        out_pop = simulate_pop(Nsamples, ages, tau_Ohm=tau_ohmic, pulsar_data=data_in)
+        out_pop = simulate_pop(Nsamples, ages, tau_Ohm=tau_ohmic, pulsar_data=data_in, gauss_approx=gauss_approx)
         
         writedlm(fileName*".dat", out_pop)
         writedlm(fileName*"_IN.dat", out_samps)

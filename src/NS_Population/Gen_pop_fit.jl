@@ -58,6 +58,10 @@ function parse_commandline()
             arg_type = Bool
             default = false
             
+        "--gauss_approx"
+            arg_type = Bool
+            default = true
+            
         "--kill_dead"
             arg_type = Bool
             default = false
@@ -140,6 +144,8 @@ NPts_Bsig = parsed_args["NPts_Bsig"];
 Nruns = parsed_args["Nruns"];
 numwalkers = parsed_args["numwalkers"]
 Nsamples = parsed_args["Nsamples"];
+gauss_approx = parsed_args["gauss_approx"];
+
 
 print("Deets...\n\n")
 print("Tau Ohmic \t", tau_ohmic, "\n")
@@ -161,11 +167,11 @@ end
 time0=Dates.now()
 
 if run_analysis == true
-    @inbounds @fastmath main(run_analysis, run_plot_data, tau_ohmic; Nsamples=Nsamples, max_T_f=max_T_f, fileName=fileName, xIn=[0.05, log10.(1.4e13), 0.05, 0.65, 0.0], run_magnetars=run_magnetars, kill_dead=kill_dead,  Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig, temp=temp, minimizeIt=minimizeIt, numwalkers=numwalkers, Nruns=Nruns);
+    @inbounds @fastmath main(run_analysis, run_plot_data, tau_ohmic; Nsamples=Nsamples, max_T_f=max_T_f, fileName=fileName, xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=run_magnetars, kill_dead=kill_dead,  Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig, temp=temp, minimizeIt=minimizeIt, numwalkers=numwalkers, Nruns=Nruns, gauss_approx=gauss_approx);
 end
 
 
-function combine_files(run_analysis, run_plot_data, tau_ohmic; max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65, 0.0], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=false, Nruns=2)
+function combine_files(run_analysis, run_plot_data, tau_ohmic; max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=false, Nruns=2)
    
     fileL = [];
  
@@ -195,7 +201,7 @@ function combine_files(run_analysis, run_plot_data, tau_ohmic; max_T_f=5.0, file
 end
 
 if parsed_args["run_Combine"] == true
-    combine_files(run_analysis, run_plot_data, tau_ohmic; max_T_f=max_T_f, fileName=fileName, xIn=[0.05, log10.(1.4e13), 0.05, 0.65, 0.0], run_magnetars=run_magnetars, kill_dead=kill_dead,  Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig, temp=false, Nruns=Nruns);
+    combine_files(run_analysis, run_plot_data, tau_ohmic; max_T_f=max_T_f, fileName=fileName, xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=run_magnetars, kill_dead=kill_dead,  Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig, temp=false, Nruns=Nruns);
 end
 
 
