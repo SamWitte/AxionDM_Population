@@ -83,16 +83,16 @@ for i in range(len(all_files)):
         
     flux_weight = fileIn[:, 0] * (1.60e-12) / dist_earth**2 * (3.24e-22)**2 / 1e-23 # Jy-Hz
     erg_list = -fileIn[:, 1] * (1 + dop_S)
-    # hold_info.append([indxP, flux, erg_central, fileIn[3] * erg_central])
+    # hold_info.append([indxP, flux, erg_central, fileIn[3] * erg_central, probability @ g = 1e-12 1/GeV])
     for j in range(len(erg_list)):
-        hold_info.append([indxP, flux_weight[j], erg_list[j]])
+        hold_info.append([indxP, flux_weight[j], erg_list[j], fileIn[j, 2]])
     
 hold_info = np.asarray(hold_info)
-for i in range(num_pts):
-    for j in range(len(all_files)):
-        fluxV[i] += hold_info[j, 1] * gauss_line_approx(erg_list[i], hold_info[j, 2], hold_info[j, 3])
+# for i in range(num_pts):
+#    for j in range(len(all_files)):
+#        fluxV[i] += hold_info[j, 1] * gauss_line_approx(erg_list[i], hold_info[j, 2], hold_info[j, 3])
 
-np.savetxt(f_out_P + "/Combined_Flux.dat", np.column_stack((erg_list, fluxV)))
+np.savetxt(f_out_P + "/Combined_Flux.dat", hold_info)
 
 
     
