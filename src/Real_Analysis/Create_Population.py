@@ -222,7 +222,7 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
         newL += "ftag=NS_{:.0f}_ \n".format(i)
         
         arr_text[indx%num_scripts] += newL + block_text
-        arr_text[indx%num_scripts] += "sleep 10"
+        arr_text[indx%num_scripts] += "sleep 10\n"
         indx += 1
         if indx%(Ntasks*num_scripts) == 0:
             for j in range(num_scripts):
