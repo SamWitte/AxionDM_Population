@@ -72,7 +72,9 @@ fluxV = np.zeros_like(erg_list)
 
 hold_info = []
 for i in range(len(all_files)):
-    fileIn = np.loadtxt(all_files[i])
+    fileIn = np.loadtxt(all_files[i], ndmin=2)
+    if len(fileIn) == 0:
+        continue
     indxP = int(all_files[i][all_files[i].find("/NS_") + 4: all_files[i].find("__Theta")])
     
     dop_S = generalF[indxP, -1]
