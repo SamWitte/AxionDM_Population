@@ -122,7 +122,7 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
         # idx, B_ini [G], P_ini [s], thetaM_ini [rad], B_out [G], P_out [s], thetaM_out [rad], Age [Myr], rhoDM [GeV / cm^3], v0_DM [km /s], x [kpc], y [kpc], z [kpc],  Mass NS [M_odot], radiusNS [km], viewing angle [rad], vNS [km/s]
            
         
-    f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=False)
+    f_out = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=False)
         
     sve_array = np.asarray(sve_array)
     np.savetxt(f_out, sve_array, fmt='%.5e')
@@ -147,7 +147,7 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
     arr_text = np.empty(num_scripts, dtype=object)
     
     
-    f_load = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=False)
+    f_load = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=False)
     
     data_in = np.loadtxt(f_load)
             
