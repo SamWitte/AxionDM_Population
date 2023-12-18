@@ -53,7 +53,8 @@ if args.gauss_approx == 1:
     gauss_approx = True
 else:
     gauss_approx = False
-    
+  
+Pmin=float(args.Pmin)
 
 ncall=3000
 nbins=3
@@ -70,6 +71,7 @@ reflect_LFL = False
 delta_on_v = False
 compute_point = True
 return_width = True
+
 
             
     
@@ -97,7 +99,6 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
             if gauss_approx:
                 P = draw_period(P0_c, sig_P0)
             else:
-                print(P0_c, sig_P0, Pmin)
                 P = draw_period_PL(P0_c, sig_P0, Pabsmin=Pmin)
                 
             alive = ((B_0 / P**2)  > (0.34 * 1e12))
