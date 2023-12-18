@@ -4,6 +4,9 @@ import glob
 import h5py
 import argparse
 from fileNaming import *
+import warnings
+
+
 
 
 parser = argparse.ArgumentParser()
@@ -56,7 +59,9 @@ def gen_population(f_out, massD, tau_ohm, MassA):
         if len(NS_outFile) == 0:
             continue
         else:
-            data_in = np.loadtxt(NS_outFile[0])
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                data_in = np.loadtxt(NS_outFile[0], ndmin=2)
             if len(data_in) == 0:
                 continue
         
