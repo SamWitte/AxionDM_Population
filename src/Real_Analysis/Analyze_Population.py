@@ -25,22 +25,13 @@ sig_B0 = float(input_info[2])
 P0_c = float(input_info[3])
 sig_P0 = float(input_info[4])
 tau_ohm = float(input_info[5])
-if input_info[6] == "1":
-    run_young = True
-else:
-    run_young = False
-    
-if input_info[7] == "1":
-    run_old = True
-else:
-    run_old = False
 
-ftag = input_info[8]
+ftag = input_info[6]
 output_dir = "Output_Files/"
 
 ### read general file
 
-f_out = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=False)
+f_out = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=False)
     
 generalF = np.loadtxt(f_out)
 
@@ -95,6 +86,8 @@ hold_info = np.asarray(hold_info)
 #        fluxV[i] += hold_info[j, 1] * gauss_line_approx(erg_list[i], hold_info[j, 2], hold_info[j, 3])
 
 np.savetxt(f_out_P + "/Combined_Flux.dat", hold_info)
+
+print("Rough estimate total radio flux @ g=1e-12 in Jy: \t ", np.sum(hold_info[:,1]) / (MassA * 1e-5 / 6.58e-16))
 
 
     
