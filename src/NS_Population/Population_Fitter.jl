@@ -225,7 +225,7 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
 end
 
 
-function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true)
+function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true, Pabsmin=1e-3)
     
     if gauss_approx
         mu_P, mu_B, sig_P, sig_B = theta
@@ -243,7 +243,7 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
         data_in = zeros(Nsamples, 2)
         for i in 1:Nsamples
             # Ptemp = (Pmax .^ (1 .+ Pbeta) .* rand()).^(1.0 ./ (1.0 .+ Pbeta))
-                            Pabsmin=1e-3
+            # Pabsmin=1e-3
             Ptemp = ((-Pmax.^(1 .+ Pbeta) .+ Pabsmin .^(1 .+ Pbeta)) .* (- Pabsmin.^(1 .+ Pbeta) ./ (Pmax.^(1 .+ Pbeta) .- Pabsmin.^(1 .+ Pbeta)) .- rand())).^(1.0 ./ (1.0 .+ Pbeta))
             Btemp = draw_Bfield_lognorm(muB=mu_B, sigB=sig_B)
             data_in[i, :] = [Btemp Ptemp]
@@ -361,7 +361,7 @@ function hard_scan(real_samples, rval, Nsamples; max_T=1e7, Pmin=0.05, Pmax=0.75
     return qval_L
 end
 
-function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh=0.6, Plow=0.02, LBhigh=log10.(3e13), LBlow=log10.(2e12), sPlow=0.05, sPhigh=0.7, sBlow=0.1, sBhigh=1.2, numwalkers=5, Nruns=1000, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true)
+function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh=0.6, Plow=0.02, LBhigh=log10.(3e13), LBlow=log10.(2e12), sPlow=0.05, sPhigh=0.7, sBlow=0.1, sBhigh=1.2, numwalkers=5, Nruns=1000, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true, Pabsmin=1e-3)
     
     maxV = 1e20
     maxParams = nothing
@@ -383,7 +383,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     end
     
     function loss(xIn)
-        Dval, qval = likelihood_func(xIn, real_samples, rval, Nsamples, max_T, tau_Ohm=tau_Ohm, B_minT=B_minT, B_maxT=B_maxT, gauss_approx=gauss_approx)
+        Dval, qval = likelihood_func(xIn, real_samples, rval, Nsamples, max_T, tau_Ohm=tau_Ohm, B_minT=B_minT, B_maxT=B_maxT, gauss_approx=gauss_approx, Pabsmin=Pabsmin)
         # return Dval
         print(log.(qval), "\t", xIn, "\n")
         return log.(qval)
@@ -447,7 +447,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
 end
 
 
-function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=true, minimizeIt=false, numwalkers=5, Nruns=1, gauss_approx=true)
+function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=true, minimizeIt=false, numwalkers=5, Nruns=1, gauss_approx=true, Pabsmin=1e-3)
 
     print("Tau \t", tau_ohmic, "\n")
     max_T = max_T_f * tau_ohmic
@@ -529,7 +529,7 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
             data_in = zeros(Nsamples, 2)
             for i in 1:Nsamples
                 # Ptemp = (Pmax .^ (1 .+ Pbeta) .* rand()).^(1.0 ./ (1.0 .+ Pbeta))
-                Pabsmin=1e-3
+                # Pabsmin=1e-3
                 Ptemp = ((-Pmax.^(1 .+ Pbeta) .+ Pabsmin .^(1 .+ Pbeta)) .* (- Pabsmin.^(1 .+ Pbeta) ./ (Pmax.^(1 .+ Pbeta) .- Pabsmin.^(1 .+ Pbeta)) .- rand())).^(1.0 ./ (1.0 .+ Pbeta))
                 Btemp = draw_Bfield_lognorm(muB=mu_B, sigB=sig_B)
                 data_in[i, :] = [Ptemp Btemp]
@@ -542,10 +542,10 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
         
         ages = rand(1:max_T, length(data_in[:, 1]))
         
-        out_pop = simulate_pop(Nsamples, ages, tau_Ohm=tau_ohmic, pulsar_data=data_in, gauss_approx=gauss_approx)
+        out_pop = simulate_pop(Nsamples, ages, tau_Ohm=tau_ohmic, pulsar_data=data_in)
         
         writedlm(fileName*".dat", out_pop)
-        writedlm(fileName*"_IN.dat", out_samps)
+        writedlm(fileName*"_IN.dat", data_in)
     end
 
     # time1=Dates.now()

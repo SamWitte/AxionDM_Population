@@ -13,6 +13,8 @@ parser.add_argument('--fIn',  help='Input file')
 parser.add_argument('--PopN', type=int, default=1, help='Indx of population')
 parser.add_argument('--Ntasks', type=int, default=1, help='Indx of population')
 parser.add_argument('--Nscripts', type=int, default=1, help='Indx of population')
+parser.add_argument('--gauss_approx', type=int, default=1)
+parser.add_argument('--Pmin', default=1e-3)
 
 args = parser.parse_args()
 
@@ -47,6 +49,12 @@ PopIdx=args.PopN
 num_scripts = args.Nscripts
 script_tag = "_Pop_{:.0f}_".format(PopIdx)
 
+if args.gauss_approx == 1:
+    gauss_approx = True
+else:
+    gauss_approx = False
+    
+
 ncall=3000
 nbins=3
 maxitrs=5
@@ -66,7 +74,7 @@ return_width = True
             
     
     
-def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag):
+def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag, gauss_approx=True, Pmin=1e-3):
         
     N_pulsars = total_num_pulsars(young=True)
     N_pulsars_old = total_num_pulsars(young=False, tau_ohm=tau_ohm)
@@ -85,7 +93,11 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
         
         while (not alive):
             B_0 = draw_field(B0_c, sig_B0)
-            P = draw_period(P0_c, sig_P0)
+            if gauss_approx:
+                P = draw_period(P0_c, sig_P0)
+            else:
+                P = draw_period_PL(P0_c, sig_P0, Pmin=Pmin)
+                
             alive = ((B_0 / P**2)  > (0.34 * 1e12))
             
             
@@ -276,7 +288,7 @@ def evolve_pulsars(B_0, P, chi, age, N_time=1e5, tau_ohm=10.0e6):
     def call_F(t, y):
         return  RHS(t, y, beta=6e-40, tau_ohm=tau_ohm, B_0=B_0)
         
-    sol_tot = solve_ivp(call_F, [times[0], times[-1]], y0, t_eval=times, max_step=1000.0)
+    sol_tot = solve_ivp(call_F, [times[0], times[-1]], y0, t_eval=times, max_step=10000.0)
     # sol_tot = odeint(RHS, y0, times, args=(6e-40, tau_ohm, ), max_step=)
     sol = np.asarray(sol_tot.y)
     
@@ -297,6 +309,10 @@ def draw_period(P_c, sP):
         return draw_period(P_c, sP)
     else:
         return val
+        
+def draw_period_PL(Pbeta, Pmax, Pabsmin=1e-3):
+    val = ((-Pmax**(1 + Pbeta) + Pabsmin**(1 + Pbeta)) * (- Pabsmin**(1 + Pbeta) / (Pmax**(1 + Pbeta) - Pabsmin**(1 + Pbeta)) - np.random.rand()))**(1.0 / (1.0 + Pbeta))
+    return val
         
 def draw_mass():
     val = stats.norm.rvs(loc=1.28, scale=0.24)
@@ -398,7 +414,7 @@ def v0_DM(r):
 
 if pop_general:
     # Makes initial input that is then used to generate server run script....
-    run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag)
+    run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag, gauss_approx=gauss_approx, Pmin=args.Pmin)
     
 if run_script_maker:
     # Makes script that can then be used to run Vegas
