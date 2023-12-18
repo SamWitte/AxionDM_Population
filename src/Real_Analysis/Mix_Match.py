@@ -52,11 +52,13 @@ def gen_population(f_out, massD, tau_ohm, MassA):
         NS_num = np.random.randint(total_entries)
         NS_info = generalF[indxP][NS_num, :]
         
-        NS_outFile = glob.glob(output_dir + f_out + massD + "/Pop_{:.0f}/NS_{:.0f}__Theta*.txt".format(indxP, NS_num))
+        NS_outFile = glob.glob(output_dir + f_out + massD + "Pop_{:.0f}/NS_{:.0f}__Theta*.txt".format(indxP, NS_num))
         if len(NS_outFile) == 0:
             continue
         else:
             data_in = np.loadtxt(NS_outFile[0])
+            if len(data_in) == 0:
+                continue
         
         
         if NS_info[7] < 30e6:
