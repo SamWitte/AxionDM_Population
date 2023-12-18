@@ -56,7 +56,7 @@ def gen_population(f_out, massD, tau_ohm, MassA):
         if len(NS_outFile) == 0:
             continue
         else:
-            data_in = np.loadtxt(NS_outFile[0])
+            data_in = np.loadtxt(NS_outFile[0], ndmin=2)
             if len(data_in) == 0:
                 continue
         
