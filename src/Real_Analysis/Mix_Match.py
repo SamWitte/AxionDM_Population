@@ -85,6 +85,17 @@ def gen_population(f_out, massD, tau_ohm, MassA):
     print("Rough estimate total radio flux @ g=1e-12 in Jy: \t ", np.sum(output_pop[:,1]) / (MassA * 1e-5 / 6.58e-16))
     return np.asarray(output_pop)
 
+def total_num_pulsars(young=True, tau_ohm=10.0e6):
+    # max_age [Myr]
+    if young:
+        total_num = 5.4e-5 * 30.0e6 # assume rate of 5.4e-5 / year, and consider "young population" only for 30 Myr
+    else:
+        if tau_ohm < 1e9:
+            total_num = 345050 * ((tau_ohm * 10.0 - 30.0e6) / 10.0e9)
+        else:
+            total_num = 345050
+        
+    return np.random.poisson(int(total_num))
 
 def nNS_dist(r): # normalized
     return r**0.07 * np.exp(-r / 0.5) * 0.468
