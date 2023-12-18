@@ -73,12 +73,6 @@ compute_point = True
 return_width = True
 
 
-<<<<<<< HEAD
-
-=======
-            
-    
->>>>>>> 13ff66286a85a14ffa799cc606b6804ca5fbc42a
     
 def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag, gauss_approx=True, Pmin=1e-3):
         
