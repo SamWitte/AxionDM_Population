@@ -24,17 +24,7 @@ sig_B0 = float(input_info[2])
 P0_c = float(input_info[3])
 sig_P0 = float(input_info[4])
 tau_ohm = float(input_info[5])
-if input_info[6] == "1":
-    run_young = True
-else:
-    run_young = False
-    
-if input_info[7] == "1":
-    run_old = True
-else:
-    run_old = False
-
-ftag = input_info[8]
+ftag = input_info[6]
 output_dir = "Output_Files/"
 
 f_out, massD = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_top_level=True)
