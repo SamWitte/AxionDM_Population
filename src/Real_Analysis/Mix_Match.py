@@ -66,7 +66,7 @@ def gen_population(f_out, massD, tau_ohm, MassA):
                 continue
         
         
-        if NS_info[7] < 30e6:
+        if NS_info[7] < 30.0:
             young = True
         else:
             young = False
