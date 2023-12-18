@@ -29,13 +29,14 @@ tau_ohm = float(input_info[5])
 ftag = input_info[6]
 output_dir = "Output_Files/"
 
+PopIdx=args.PopN
 ### read general file
 
 f_out = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=False)
     
 generalF = np.loadtxt(f_out)
 
-PopIdx=args.PopN
+
 
 f_out_P = file_outName(output_dir, MassA, ftag, PopIdx, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_pop=True)
 
