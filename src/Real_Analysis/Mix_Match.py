@@ -33,6 +33,7 @@ f_out, massD = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig
 def gen_population(f_out, massD, tau_ohm, MassA):
     Pop_topL = glob.glob(f_out + "Population_*.txt")
     Npop = len(Pop_topL)
+    print("Number of populations used: \t", Npop)
     generalF = np.empty(Npop, dtype=object)
     for i in range(Npop):
         generalF[i] = np.loadtxt(Pop_topL[i])
