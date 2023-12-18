@@ -4,7 +4,7 @@ import glob
 import h5py
 import argparse
 from fileNaming import *
-
+import warnings
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--fIn',  help='Input file')
@@ -64,7 +64,9 @@ fluxV = np.zeros_like(erg_list)
 
 hold_info = []
 for i in range(len(all_files)):
-    fileIn = np.loadtxt(all_files[i], ndmin=2)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fileIn = np.loadtxt(all_files[i], ndmin=2)
     if len(fileIn) == 0:
         continue
     indxP = int(all_files[i][all_files[i].find("/NS_") + 4: all_files[i].find("__Theta")])
