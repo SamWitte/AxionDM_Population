@@ -28,10 +28,10 @@ ftag = input_info[6]
 output_dir = "Output_Files/"
 
 f_out, massD = file_outName(output_dir, MassA, ftag, 1, tau_ohm, B0_c, P0_c, sig_B0, sig_P0, return_top_level=True)
-
+# print(f_out)
 
 def gen_population(f_out, massD, tau_ohm, MassA):
-    Pop_topL = glob.glob(f_out + "Population_*.txt")
+    Pop_topL = glob.glob(output_dir + f_out + "Population_*.txt")
     Npop = len(Pop_topL)
     print("Number of populations used: \t", Npop)
     generalF = np.empty(Npop, dtype=object)
@@ -52,7 +52,7 @@ def gen_population(f_out, massD, tau_ohm, MassA):
         NS_num = np.random.randint(total_entries)
         NS_info = generalF[indxP][NS_num, :]
         
-        NS_outFile = glob.glob(f_out + massD + "/Pop_{:.0f}/NS_{:.0f}__Theta*.txt".format(indxP, NS_num))
+        NS_outFile = glob.glob(output_dir + f_out + massD + "/Pop_{:.0f}/NS_{:.0f}__Theta*.txt".format(indxP, NS_num))
         if len(NS_outFile) == 0:
             continue
         else:
