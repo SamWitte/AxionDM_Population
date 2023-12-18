@@ -170,7 +170,7 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
         arr_text[i] += "ncall={:.0f}\n".format(ncall)
         arr_text[i] += "nbins={:.0f}\n".format(nbins)
         arr_text[i] += "maxitrs={:.0f}\n".format(maxitrs)
-        arr_text[i] += "theta_err={:.0f}\n".format(theta_err)
+        arr_text[i] += "theta_err={:.2f}\n".format(theta_err)
         
         
         
@@ -205,7 +205,7 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
     for i in range(len(data_in[:,0])):
         # [i, B_0, P, chi, Bfinal[-1], Pfinal[-1], chifinal[-1], age/1e6, rho_DM, v0_DM, locNS[0], locNS[1], locNS[2], vNS[0], vNS[1], vNS[2], MassNS, radiusNS, view_angle]
         
-        if check_conversion(MassA, data_in[i, 4], data_in[i, 5], data_in[i, 6]) == 0:
+        if check_conversion(MassA, data_in[i, 4], data_in[i, 5], data_in[i, 6]) == 1:
             continue
             
         if data_in[i, 4] > 4.4e13:
@@ -252,10 +252,10 @@ def RHS(t, y, beta=6e-40, tau_ohm=10.0e6, B_0=1.0e12):
 
     # Bfield Evolution
     T_core = 1e9 * (1 + t)**(-1./6.)
-    tau_Ohm = tau_ohm * 1e6
+    # tau_Ohm = tau_ohm * 1e6
     # tau_Hall = 5e5 * (1e14 /B)
 
-    dLogBdT = -1.0/tau_Ohm
+    # dLogBdT = -1.0/tau_Ohm
     # dLogBdT = -1.0/tau_Ohm
 
     # Period Evolution
@@ -276,7 +276,7 @@ def evolve_pulsars(B_0, P, chi, age, N_time=1e5, tau_ohm=10.0e6):
     def call_F(t, y):
         return  RHS(t, y, beta=6e-40, tau_ohm=tau_ohm, B_0=B_0)
         
-    sol_tot = solve_ivp(call_F, [times[0], times[-1]], y0, t_eval=times, max_step=10000.0)
+    sol_tot = solve_ivp(call_F, [times[0], times[-1]], y0, t_eval=times, max_step=1000.0)
     # sol_tot = odeint(RHS, y0, times, args=(6e-40, tau_ohm, ), max_step=)
     sol = np.asarray(sol_tot.y)
     
@@ -313,9 +313,9 @@ def check_conversion(MassA, B, P, thetaM):
     ne_max = 2 * (2*np.pi / P) * (B * np.cos(thetaM) * 1.95e-2) / 0.3 * 6.58e-16
     max_omegaP = np.sqrt(4*np.pi / 137 * np.abs(ne_max) / 5.00e5)
     if max_omegaP < MassA:
-        return 0
+        return 0 # no conversion possible
     else:
-        return 1
+        return 1 # conversion possible
         
         
 def draw_chi():
@@ -326,7 +326,10 @@ def draw_uniform_age(young=True, tau_ohm=10.0e6):
     if young:
         return np.random.rand() * 30.0e6
     else:
-        max_age = np.min([tau_ohm * 10.0, 10e9])
+        if tau_ohm < 1e9:
+            max_age = 1e9
+        else:
+            max_age = 10e9
         age_good = False
         while not age_good:
             age = np.random.rand() * max_age
