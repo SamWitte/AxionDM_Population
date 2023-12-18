@@ -39,7 +39,7 @@ ftag = input_info[6]
 output_dir = "Output_Files/"
 if not os.path.exists(output_dir):
     os.mkdir(output_dir)
-pop_general = True
+pop_general = False
 
 script_dir = "scripts/"
 if not os.path.exists(script_dir):
@@ -55,7 +55,7 @@ else:
     gauss_approx = False
     
 
-ncall=3000
+ncall=4000
 nbins=3
 maxitrs=5
 theta_err=0.04
