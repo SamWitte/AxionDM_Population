@@ -61,6 +61,10 @@ function parse_commandline()
         "--gauss_approx"
             arg_type = Bool
             default = true
+                
+        "--Pabsmin"
+            arg_type = Float64
+            default = 1e-3
             
         "--kill_dead"
             arg_type = Bool
@@ -145,6 +149,7 @@ Nruns = parsed_args["Nruns"];
 numwalkers = parsed_args["numwalkers"]
 Nsamples = parsed_args["Nsamples"];
 gauss_approx = parsed_args["gauss_approx"];
+Pabsmin = parsed_args["Pabsmin"];
 
 
 print("Deets...\n\n")
@@ -167,7 +172,7 @@ end
 time0=Dates.now()
 
 if run_analysis == true
-    @inbounds @fastmath main(run_analysis, run_plot_data, tau_ohmic; Nsamples=Nsamples, max_T_f=max_T_f, fileName=fileName, xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=run_magnetars, kill_dead=kill_dead,  Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig, temp=temp, minimizeIt=minimizeIt, numwalkers=numwalkers, Nruns=Nruns, gauss_approx=gauss_approx);
+    @inbounds @fastmath main(run_analysis, run_plot_data, tau_ohmic; Nsamples=Nsamples, max_T_f=max_T_f, fileName=fileName, xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=run_magnetars, kill_dead=kill_dead,  Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig, temp=temp, minimizeIt=minimizeIt, numwalkers=numwalkers, Nruns=Nruns, gauss_approx=gauss_approx, Pabsmin=Pabsmin);
 end
 
 
