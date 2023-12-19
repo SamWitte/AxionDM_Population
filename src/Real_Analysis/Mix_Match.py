@@ -87,7 +87,7 @@ def gen_population(f_out, massD, tau_ohm, MassA):
         erg_list = -data_in[:, 1] * (1 + dop_S)
     
         for j in range(len(erg_list)):
-            output_pop.append([i, flux_weight[j], erg_list[j], data_in[j, 2]])
+            output_pop.append([i, flux_weight[j], erg_list[j], data_in[j, 2], locNS[j, 0], locNS[j, 1], locNS[j, 2]])
         
     output_pop = np.asarray(output_pop)
     print("Rough estimate total radio flux @ g=1e-12 in Jy: \t ", np.sum(output_pop[:,1]) / (MassA * 1e-5 / 6.58e-16))
@@ -160,4 +160,5 @@ def v0_DM(r):
     return 122.67 * np.sqrt(1 / (r * 1e3)) # derived from Bens paper with gamma = 1
 
 
-gen_population(f_out, massD, tau_ohm, MassA)
+output_data = gen_population(f_out, massD, tau_ohm, MassA)
+# save or call from other function? depending on what you want.
