@@ -78,8 +78,8 @@ return_width = True
     
 def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag, gauss_approx=True, Pmin=1e-3):
         
-    N_pulsars = np.random.poisson(lam=total_num_pulsars(young=True))
-    N_pulsars_old = np.random.poisson(lam=total_num_pulsars(young=False, tau_ohm=tau_ohm))
+    N_pulsars = total_num_pulsars(young=True)
+    N_pulsars_old = total_num_pulsars(young=False, tau_ohm=tau_ohm)
 
     print("Number of pulsars: \t", N_pulsars + N_pulsars_old)
     sve_array = []
@@ -90,8 +90,6 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
         else:
             young = False
             
-        young = False
-        
         alive = False
         
         while (not alive):
