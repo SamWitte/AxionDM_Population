@@ -1,0 +1,24 @@
+# General info on formatting / output
+# Dated Dec 20, 2023 [SJW]
+
+# The top level directory contains two relevant scripts: Analyze_Population.py and Mix_Match.py
+
+# Analyze_Population.py: should be run as python Analyze_Population.py --fIn Input_Files/"Relevant File" --PopN "Integer for population number"
+# this will run through the relevant population and compile a single output file called "Combined_Flux.dat" which will be stored in the population directory
+# the content ot this file will be [NS index number, weight of photon sample, erg of photon, conversion probability of photon evaulated at g = 1e-12 1/GeV]
+# photon weights have units Jy - Hz, so a quick flux density estimate would be to sum over all photons and divide off by the bin width (which must contain all photons)
+
+# Mix_Match.py: should be run as python Mix_Match.py --fIn Input_Files/"Relevant File"
+# THIS FILE YOU NEED TO MODIFY FOR YOUR NEEDS. At the moment the function "gen_population" will be called if you run from the command line, but nothing will be done with the output!
+# This file basically creates a new population from the existing N independent populations which exist in the relevant directory. Each NS will be randomly drawn from existing populations, but spatial
+# distributions and doppler shifts will be resampled (and the weights will be corrected for these effects). This is not technically correct, but lets us get many samples quickly.
+
+# Output format:
+# all output is in "Output_Files" directory (not surprising)
+# after "Output_Files", one finds directories which define NS population models. For the moment there are two: each has an ohmic decay timescale of 10 Myr, but they are based on different fits
+# these directories correspond to different input files (see Input_Files directory)
+# within e.g. "Output_Files/BF_PL_Pmin1e-3_TauO_1.00e+07_B_13.45_sB_0.71_P_-0.92_sP_0.14_/" one finds the population overview files (labeled "Population_Details_Pop_0_.txt").
+# these files contain info on the full population that I've sampled (not all NSs, but all NSs with an age less than some threshold which ive defined elsewhere). You can see "Create_Population.py" if
+# you care about the formatting
+# If we keep going we see a directory called "Ma_4.130e-06" -- this obviously labels the axion mass. Keep going and you find "Pop_i" for i in the number of independent populations. Each of these files
+# contains all of the neutron stars that have been run, and potentially a "Combined_Flux.dat" if you have run Analyaze Population on the file.
