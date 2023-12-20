@@ -1,7 +1,8 @@
-1.00e-5 # axion mass
+4.13e-6 # axion mass
 12.60	# B_c [fit]
 0.40	# sig_B
 0.30	# P_c
 0.50	# sig_P
 10.0e6	# Tau Ohm
 default_fit_ # ftag
+

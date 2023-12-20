@@ -53,10 +53,10 @@ if args.gauss_approx == 1:
     gauss_approx = True
 else:
     gauss_approx = False
-  
+
 Pmin=float(args.Pmin)
 
-ncall=3000
+ncall=4000
 nbins=3
 maxitrs=5
 theta_err=0.04
@@ -73,8 +73,6 @@ compute_point = True
 return_width = True
 
 
-            
-    
     
 def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag, gauss_approx=True, Pmin=1e-3):
         
@@ -171,7 +169,7 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
     out_file = f_out
     # write into to each script
     
-    block_text = "srun -n 1 --exclusive --mem=$memPerjob --cpus-per-task=1 julia --threads 1 Gen_Vegas_Server.jl --MassA $MassA --B0 $B0 --ThetaM $ThetaM --rotW $rotW --AxG $gagg --Mass_NS $Mass_NS --rNS $rNS  --ftag $ftag --add_tau true --Thick true --thetaN 1 --theta_target $thetaV --rhoDM $rhoDM --vmean_ax $vmean_ax --debug false --ncalls $ncall --nbins $nbins --maxitrs $maxitrs --theta_err $theta_err --null_fill $null_fill --reflect_LFL $reflect_LFL --delta_on_v $delta_on_v --compute_point $compute_point --return_width $return_width --output_dir $out_file & \n"
+    block_text = "srun -n 1 --exclusive --mem=$memPerjob --cpus-per-task=1 julia --threads 1 Gen_Vegas_Server.jl --MassA $MassA --B0 $B0 --ThetaM $ThetaM --rotW $rotW --AxG $gagg --Mass_NS $Mass_NS --rNS $rNS  --ftag $ftag --add_tau true --Thick true --thetaN 1 --theta_target $thetaV --rhoDM $rhoDM --vmean_ax $vmean_ax --debug true --ncalls $ncall --nbins $nbins --maxitrs $maxitrs --theta_err $theta_err --null_fill $null_fill --reflect_LFL $reflect_LFL --delta_on_v $delta_on_v --compute_point $compute_point --return_width $return_width --output_dir $out_file & \n"
    
     
     # SERVER SPECIFIC -- writing for Hydra
@@ -415,7 +413,7 @@ def v0_DM(r):
 
 if pop_general:
     # Makes initial input that is then used to generate server run script....
-    run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag, gauss_approx=gauss_approx, Pmin=args.Pmin)
+    run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag, gauss_approx=gauss_approx, Pmin=Pmin)
     
 if run_script_maker:
     # Makes script that can then be used to run Vegas

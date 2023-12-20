@@ -2,8 +2,8 @@ import numpy as np
 import os
 from Interpolate_Bank import *
 
-file_in = np.loadtxt("test.txt")
-MassA = 1.0e-5
+file_in = np.loadtxt("Pop_Test_In.txt")
+MassA = 5.79e-6
 dir_out = "population_output"
 file_out = "Pop_test.txt"
 
@@ -29,10 +29,11 @@ def run_population(MassA, file_in, dir_out, file_out, NS_population='Young'):
         dist_earth = np.sqrt(np.sum((xE - locNS)**2))
         
         dop_S = (vNS/2.998e5) * np.sin(sample_theta()) * np.sin(np.random.rand() * 2*np.pi)
-        
+        print(vNS, "\t", dop_S)
         out = Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=dop_S, density_rescale=rho_DM, v0_rescale=vDM)
         if np.all(out == 0):
             continue
+
         out[:, 1] *= (1.60e-12) / dist_earth**2 * (3.24e-22)**2 / 1e-23 # Jy-Hz (ie divide by bandwidth in Hz to get flux density)
         if cnt == 0:
             locNS_full = np.ones((len(out[:,0]) ,3)) * locNS
@@ -41,6 +42,8 @@ def run_population(MassA, file_in, dir_out, file_out, NS_population='Young'):
             locNS_full = np.ones((len(out[:,0]) ,3)) * locNS
             full_radio = np.vstack((full_radio, np.column_stack((locNS_full, out))))
         cnt += 1
+        
+    print(full_radio)
     if not os.path.isdir(dir_out):
         os.mkdir(dir_out)
     np.savetxt(dir_out + "/" + file_out, full_radio)

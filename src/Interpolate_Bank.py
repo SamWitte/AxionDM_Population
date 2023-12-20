@@ -92,7 +92,6 @@ def Pulsar_signal(MassA, ThetaV, Bv, Pv, gagg=1.0e-12, eps_theta=0.03, dopplerS=
     for jj in range(len(ergs_small)):
         output.append([ergs_small[jj], photons[jj] * weight])
    
-
     file1 = np.all(np.column_stack((file_params[:, 1]==Bmax, file_params[:,2]==Pmax)), axis=1)
     fileL = h5py.File(bankF[int(file_params[file1, 0])], "r")
     weight = (1 - weight_P) * (1 - weight_B)

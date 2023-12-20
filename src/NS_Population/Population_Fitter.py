@@ -58,10 +58,8 @@ print("Estimated number of pulsars in formed in last {:.2e} years: {:.2e}".forma
 
 
 
-
 Nsamples=1000
 N_steps = 300
-
 
 
 
@@ -314,13 +312,17 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
 
 
     ndim, nwalkers = 5, 10
+<<<<<<< HEAD
+=======
 
+>>>>>>> ee63a9dfb1afd85fdcdbce050bcd83171a7bc88b
     # params: mu_P, mu_B, sig_P, sig_B, cov_PB
     central_v = np.array([np.log(0.3), np.log(10**12.95), 0.1, 0.4, 0.0])
     pos = [central_v + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+
+#    Nsamples=500
     pos = np.asarray(pos)
 
-    
     
     #with Pool() as pool:
     sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_func, args=(real_samples,))
@@ -332,7 +334,7 @@ def mcmc_func_minimize(real_samples, max_T=1e7):
     
     
     fig = corner.corner(samples, labels=[r"$\log_{\mu_P}$", r"$\log_{\mu_B}$", r"$\log_{\sigma_p}$", r"$\log_{\sigma_B}$", r"$\log_{\sigma_BP}$"])
-    fig.savefig("triangle_TEST.png")
+    fig.savefig("triangle_TEST_small.png")
 
     return
  
