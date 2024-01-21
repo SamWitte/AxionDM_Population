@@ -203,7 +203,7 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
         end
         lum, s_den1GHz = Lum(Pf, Pdot, dist_earth, alpha=0.48, muLcorr=0.0, sigLcorr=0.8)
         
-        DM, tau_sc = pygedm.dist_to_dm(GC_l, GC_b, dist_earth * 1e3 * u.pc, method="ymw16")
+        DM, tau_sc = pygedm.dist_to_dm(GC_l .* 180 ./ pi, GC_b .* 180 ./ pi, dist_earth * 1e3 * u.pc, method="ymw16")
         
         minF1 = min_flux_test1(Pf, tau_sc[1], threshold=width_threshold)
         if minF1 == 0
@@ -231,11 +231,11 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
         mu_P, mu_B, sig_P, sig_B = theta
         mean = [mu_P, mu_B]
         cov = [sig_P.^2 0.0; 0.0 sig_B.^2]
-        # print("here 1\n")
-        # print("here 2\n\n")
+ 
         dist = MvNormal(mean, cov)
         out_samps = rand(dist, Nsamples)'
-        P_in = abs.(out_samps[:,1]) #
+        # P_in = abs.(out_samps[:,1]) #
+        P_in = 10 .^ out_samps[:, 1]
         B_in = 10 .^(out_samps[:,2])
         data_in = hcat(B_in, P_in)
     else
@@ -255,7 +255,11 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
     
     out_pop = simulate_pop(Nsamples, ages, beta=6e-40, tau_Ohm=tau_Ohm, width_threshold=0.1, pulsar_data=data_in, B_min=B_minT, B_max=B_maxT)
     num_out = length(out_pop[:,1])
-#     print("Pulsar Birth Rate (per century) \t", num_out ./ max_T ./ 100)
+    pulsar_birth_rate = (Nsamples ./ max_T .* 100) .* (length(real_samples[:, 1]) ./ num_out)
+    birth_prob = exp.(-(1.63 .- pulsar_birth_rate).^2 ./ (2 .* 0.46.^2))
+    
+    # print("Pulsar Birth Rate (per century) \t", pulsar_birth_rate, "\n")
+    # print(max_T, "\t", num_out, "\n")
 #    Obs_pulsarN_L = (num_out - 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsL
 #    Obs_pulsarN_H = (num_out + 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsH
     # print(num_out, "\n")
@@ -330,8 +334,8 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
             Qval += 2.0 .* (-1).^(i-1) .* exp.(-2 .* i.^2 .* lam)
         end
         
-        print("Dval \t", Dval, "  p(D > Dobs) \t", Qval, "\n")
-        return Dval, Qval
+        print("Dval \t", Dval, "  p(D > Dobs) \t", Qval .* birth_prob, "\n")
+        return Dval, Qval .* birth_prob
     end
 end
 
@@ -361,7 +365,7 @@ function hard_scan(real_samples, rval, Nsamples; max_T=1e7, Pmin=0.05, Pmax=0.75
     return qval_L
 end
 
-function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh=0.6, Plow=0.02, LBhigh=log10.(3e13), LBlow=log10.(2e12), sPlow=0.05, sPhigh=0.7, sBlow=0.1, sBhigh=1.2, numwalkers=5, Nruns=1000, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true, Pabsmin=1e-3)
+function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh=0.0, Plow=-2.0, LBhigh=log10.(3e13), LBlow=log10.(1e12), sPlow=0.05, sPhigh=1.0, sBlow=0.1, sBhigh=1.2, numwalkers=5, Nruns=1000, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true, Pabsmin=1e-3)
     
     maxV = 1e20
     maxParams = nothing
@@ -473,7 +477,7 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
     true_pop = true_pop[true_pop[:,2] .> 0, :]
     B_true = 1e12 .* sqrt.((true_pop[:, 2] ./ 1e-15) .* true_pop[:, 1])
     true_pop = true_pop[(B_true .> B_minT) .& (B_true .< B_maxT), :]
-    N_pulsars_tot = length(true_pop[:, 1])  # this is ATNF number 3389
+    N_pulsars_tot = length(true_pop[:, 1])  # this is ATNF number 3389, post cut ~2131
     print("Number pulsars in sample \t", N_pulsars_tot, "\n")
 
 
