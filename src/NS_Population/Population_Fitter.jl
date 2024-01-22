@@ -27,8 +27,17 @@ pygedm = pyimport("pygedm")
 # Random.seed!(1235)
 
 
-function beaming_cut(P)
-    f_per = (9 * log10.(P / 10.0)^2 + 3.0) * 1e-2
+function beaming_cut(P, ThetaF)
+    # one way
+    # f_per = (9 * log10.(P / 10.0)^2 + 3.0) * 1e-2
+    # alternate way
+    rhob = sqrt.(9 .* pi * 300.0 ./ (2 .* P) ./ 2.998e5)
+    if (ThetaF - rhob) > 0.0
+        f_per = sin.(ThetaF) .* sin.(rhob) .* 2
+    else
+        f_per = 1.0 .- cos.(ThetaF .+ rhob)
+    end
+    # print(f_test, "\t", f_per, "\n")
     if f_per > 1
         f_per = 1.0
     end
@@ -40,18 +49,23 @@ function Lum(P, Pdot, dist; alpha=0.48, muLcorr=0.0, sigLcorr=0.8)
     L0 = 5.69e6 # mJy / kpc^2
     d = Normal(0.0, 0.8)
     L1Ghz = L0 * 10 .^rand(d,1)[1] * (Pdot / P^3)^alpha
-    return L1Ghz, L1Ghz / dist^2
+    rhob = sqrt.(9 .* pi * 300.0 ./ (2 .* P) ./ 2.998e5)
+    return L1Ghz, L1Ghz / dist^2 ./ (4 .* pi .* (1 .- cos.(rhob)))
 end
 
-function sample_location(age; diskH=0.5, diskR=10.0)
-    hh = rand(range(-diskH, stop=diskH, length=1000))
+function sample_location(age; diskH=0.18, diskR=10.0)
+    # hh = rand(range(-diskH, stop=diskH, length=1000))
+    hh = diskH .* log.(1.0 ./ (1.0 .- rand()))
+    if rand() .> 0.5
+        hh *= -1.0
+    end
     rr = diskR * sqrt(rand())
     phi_loc = 2 * pi * rand()
     x_cart = [rr * cos(phi_loc), rr * sin(phi_loc), hh]
-    Vel1d = 0.9 * (2 * sqrt(190.0) * sqrt(log(1 / (1 - rand())))) + 0.1 * (2 * sqrt(786.0) * sqrt(log(1 / (1 - rand()))))
-    theta = acos(1.0 - 2.0 * rand())
-    phi = 2 * pi * rand()
-    vel_vec = Vel1d * [cos(phi) * sin(theta), sin(theta) * sin(phi), cos(theta)]
+    # Vel1d = 0.9 * (2 * sqrt(190.0) * sqrt(log(1 / (1 - rand())))) + 0.1 * (2 * sqrt(786.0) * sqrt(log(1 / (1 - rand()))))
+    # theta = acos(1.0 - 2.0 * rand())
+    # phi = 2 * pi * rand()
+    # vel_vec = Vel1d * [cos(phi) * sin(theta), sin(theta) * sin(phi), cos(theta)]
     # xpos = x_cart + vel_vec * age * (3.24078e-17 * 3.15e7)
     xpos = x_cart
     return xpos
@@ -65,16 +79,25 @@ function min_flux_test1(P, tau_sc; threshold=0.1)
     end
 end
 
-function min_flux_test2(P, DM; beta=2, tau=1.0e-2, DM0=60, DM1=7.5, G=0.64, Trec=21, d_freq=100e6, tobs=200, SN=10, Tsky=1.0)
-
-    wid = 0.05 * P
-    Smin = SN * beta * (Trec + Tsky) / (G * sqrt.(2 * d_freq * tobs)) .* 1e3
+function min_flux_test2(P, DM, chi, t_scat; beta=2, tau=1.0e-2, DM0=60, DM1=7.5, G=0.75, Trec=21, d_freq=288e6, f_ch=3000e3, tobs=2000, SN=9, Tsky=1.0)
     
-    w_e = sqrt.(wid^2 + (beta * tau)^2 + (tau * DM / DM0)^2 + (tau * (DM - DM1) / DM1)^2)
-    if w_e .>= P
+    rb = sqrt.(9 .* pi * 300.0 ./ (2 .* P) ./ 2.998e5)
+    # alph = rand() .* rb .+ chi
+    # w_int = 4 .* P .* asin.(sqrt.( abs.( sin.(0.5 .* (rb .+ (alph .- chi))) .* sin.(0.5 .* (rb .- (alph .- chi))) ./ (sin.(chi) .* sin.(alph)))) )
+    w_int = 2 .* rb ./ cos.(chi) .* P
+    tau_samp = 200e-6
+    tau_dm = 0.3.^2 ./ (pi * 5.11e5) .* f_ch ./ (1.4e9.^3) .* DM .* (3.086e18) .* 2.998e10.^2 .* 6.58e-16
+
+    
+    w_ob = sqrt.(w_int.^2 .+ tau_samp.^2 .+ tau_dm.^2 .+ t_scat.^2)
+    
+    # wid = 0.05 * P
+    
+    if w_ob .>= P
         return 1e100
     else
-        return Smin * sqrt.(w_e / (P - w_e))
+        Smin = SN * beta * (Trec + Tsky) / (G * sqrt.(2 * d_freq * tobs)) * sqrt.(w_ob / (P - w_ob)) .* (P ./ w_int) .* 1e3
+        return Smin
     end
 end
 
@@ -154,7 +177,7 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
     # final_list = []
     Theta_in = draw_chi(length(ages))
     
-    temp_store = zeros(length(ages), 7)
+    temp_store = zeros(length(ages), 8)
     
     Threads.@threads for i in 1:length(ages)
         if typeof(pulsar_data) == Nothing
@@ -189,29 +212,36 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
         GC_b = asin.(xfin[3] / dist_earth)
         GC_l = atan.(xfin_shift[1], xfin_shift[2])
         
-        temp_store[i, :] .= [ages[i], Bf, Pf, Pdot, GC_b, GC_l, dist_earth]
+        temp_store[i, :] .= [ages[i], Bf, Pf, Pdot, GC_b, GC_l, dist_earth, ThetaF]
     end
     
     temp_store = temp_store[temp_store[:,1] .> 0.0, :]
     
     final_list = zeros(length(temp_store[:,1]), 2)
+    test1=0
+    test2=0
     for i in 1:length(temp_store[:,1])
-        age, Bf, Pf, Pdot, GC_b, GC_l, dist_earth = temp_store[i, :]
+        age, Bf, Pf, Pdot, GC_b, GC_l, dist_earth, ThetaF = temp_store[i, :]
 
-        if beaming_cut(Pf) == 0
+        if beaming_cut(Pf, ThetaF) == 0
             continue
         end
         lum, s_den1GHz = Lum(Pf, Pdot, dist_earth, alpha=0.48, muLcorr=0.0, sigLcorr=0.8)
         
         DM, tau_sc = pygedm.dist_to_dm(GC_l .* 180 ./ pi, GC_b .* 180 ./ pi, dist_earth * 1e3 * u.pc, method="ymw16")
+        t_scat_mean = (3.6e-9 .* DM.^2 .* (1 .+ 1.94e-3 .* DM.^2)) .* (1400.0 ./ 327).^(-4.4)
+        tau_sc = 10 .^(log10.(t_scat_mean) .+ sqrt(2) .* 0.5 .* erfinv(2 * rand() .- 1.0))
         
-        minF1 = min_flux_test1(Pf, tau_sc[1], threshold=width_threshold)
+        
+        minF1 = min_flux_test1(Pf, tau_sc, threshold=width_threshold)
         if minF1 == 0
+            test1 += 1
             continue
         end
-        minF2 = min_flux_test2(Pf, DM[1], beta=2, tau=1.0e-2, DM0=60, DM1=7.5, G=0.64, Trec=21, d_freq=300e6, tobs=1000, SN=5, Tsky=1.0)
+        minF2 = min_flux_test2(Pf, DM[1], ThetaF, tau_sc)
         
         if s_den1GHz < minF2
+            test2 += 1
             continue
         end
         
@@ -219,7 +249,7 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
         # push!(final_list, [Pf, Pdot])
         final_list[i, :] = [Pf, Pdot]
     end
-    
+    print(test1, "\t", test2, "\t", length(temp_store[:,1]), "\n")
     final_out = final_list[final_list[:,1] .> 0.0, :]
     return final_out
 end
@@ -256,9 +286,10 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
     out_pop = simulate_pop(Nsamples, ages, beta=6e-40, tau_Ohm=tau_Ohm, width_threshold=0.1, pulsar_data=data_in, B_min=B_minT, B_max=B_maxT)
     num_out = length(out_pop[:,1])
     pulsar_birth_rate = (Nsamples ./ max_T .* 100) .* (length(real_samples[:, 1]) ./ num_out)
-    birth_prob = exp.(-(1.63 .- pulsar_birth_rate).^2 ./ (2 .* 0.46.^2))
+    # birth_prob = exp.(-(1.63 .- pulsar_birth_rate).^2 ./ (2 .* 0.46.^2))
+    birth_prob = exp.(-(1.63 .- pulsar_birth_rate).^2 ./ (2.0))
     
-    # print("Pulsar Birth Rate (per century) \t", pulsar_birth_rate, "\n")
+    print("Pulsar Birth Rate (per century) \t", pulsar_birth_rate, "\t", num_out, "\n")
     # print(max_T, "\t", num_out, "\n")
 #    Obs_pulsarN_L = (num_out - 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsL
 #    Obs_pulsarN_H = (num_out + 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsH
