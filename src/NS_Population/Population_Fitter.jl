@@ -110,14 +110,24 @@ function evolve_pulsar(B0, P0, Theta_in, age; n_times=1e2, beta=6e-40, tau_Ohm=1
     
     Bf = B0 .* exp.(- age ./ tau_Ohm);
     
-    prob = ODEProblem(RHS!, y0, tspan, Mvars, reltol=1e-4, abstol=1e-4, dtmin=1e-3, force_dtmin=true)
+    prob = ODEProblem(RHS!, y0, tspan, Mvars, reltol=1e-4, abstol=1e-4, dtmin=1e-5, force_dtmin=true)
     
     condition_r(u,lnt,integrator) = u[2]
     function affect_r!(integrator)
         integrator.u[2] = 0.0
     end
+    
+    Pdeath = sqrt.(Bf ./ (0.34 * 1e12))
+    condition_dead(u,lnt,integrator) = u[1] .> Pdeath
+    function affect_dead!(integrator)
+        terminate!(integrator)
+    end
+    cb_d = ContinuousCallback(condition_dead, affect_dead!)
     cb_r = ContinuousCallback(condition_r, affect_r!)
-    sol = solve(prob, Vern6(), saveat=saveat)
+    cb_all = CallbackSet(cb_r, cb_d)
+    
+    sol = solve(prob, Vern6(), saveat=saveat, callback=cb_all)
+    # sol = solve(prob, Vern6(), saveat=saveat)
     
     
     Pf = sol.u[end][1]
@@ -133,7 +143,7 @@ end
 
 
 function RHS!(du, u, Mvars, t)
-    
+    # print(t, "\t", u, "\n")
     beta, tau_Ohm, B0 = Mvars
     
     B = B0 .* exp.(- t ./ tau_Ohm);
@@ -148,9 +158,12 @@ function RHS!(du, u, Mvars, t)
     alive = (B / P^2 > 0.34 * 1e12)
     
     # du[1] = -1.0 / tau_Ohm
-    
+    spin = 1.0
+    if u[2] < 0.01
+        spin = 0.0
+    end
     du[1] = beta * B.^2 ./ P * (alive * 1.0 + 1.0 * sin(chi)^2) .* 3.1536e+7
-    du[2] = -1.0 * beta * B^2 / P^2 * sin(chi) * cos(chi) .* 3.1536e+7
+    du[2] = -spin * beta * B^2 / P^2 * sin(chi) * cos(chi) .* 3.1536e+7
 
     return
 end
@@ -194,12 +207,14 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
         dist_earth = sqrt.(sum(xfin_shift.^2))
         
         Bf = B0 .* exp.(- ages[i] ./ tau_Ohm)
+        # quick check to see if life is easy...
         Bdeath = 0.34 * 1e12 * P0.^2
         if (Bf <= Bdeath)&&(kill_dead)
             continue
         end
         
         Bf, Pf, ThetaF, Pdot = evolve_pulsar(B0, P0, Theta_in[i], ages[i], beta=beta, tau_Ohm=tau_Ohm)
+        # robust check
         Bdeath = 0.34 * 1e12 * Pf.^2
         if (Bf <= Bdeath)&&(kill_dead)
             continue
@@ -402,7 +417,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     maxParams = nothing
     
     function prior(theta)
-        
+        print("prior \n")
         if gauss_approx
             Pv, Bv, sP, sB = theta
             if (Plow .< Pv .< Phigh)&&(LBlow .< Bv .< LBhigh)&&(sPlow .< sP .< sPhigh)&&(sBlow .< sB .< sBhigh)
@@ -418,6 +433,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     end
     
     function loss(xIn)
+        
         Dval, qval = likelihood_func(xIn, real_samples, rval, Nsamples, max_T, tau_Ohm=tau_Ohm, B_minT=B_minT, B_maxT=B_maxT, gauss_approx=gauss_approx, Pabsmin=Pabsmin)
         # return Dval
         print(log.(qval), "\t", xIn, "\n")
@@ -425,6 +441,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     end
     
     function log_probability(theta)
+        
         lp = prior(theta)
         if !isfinite.(lp)
             return -Inf
