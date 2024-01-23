@@ -417,7 +417,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     maxParams = nothing
     
     function prior(theta)
-        print("prior \n")
+        
         if gauss_approx
             Pv, Bv, sP, sB = theta
             if (Plow .< Pv .< Phigh)&&(LBlow .< Bv .< LBhigh)&&(sPlow .< sP .< sPhigh)&&(sBlow .< sB .< sBhigh)
