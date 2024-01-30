@@ -303,11 +303,12 @@ def draw_field(B_c, sB):
     return 10**(B_c + np.sqrt(2) * sB * erfinv(2 * np.random.rand() - 1.0))
 
 def draw_period(P_c, sP):
-    val = stats.norm.rvs(loc=P_c, scale=sP)
-    if val <= 0:
-        return draw_period(P_c, sP)
-    else:
-        return val
+#    val = stats.norm.rvs(loc=P_c, scale=sP)
+#    if val <= 0:
+#        return draw_period(P_c, sP)
+#    else:
+#        return val
+    return 10**(P_c + np.sqrt(2) * sP * erfinv(2 * np.random.rand() - 1.0))
         
 def draw_period_PL(Pbeta, Pmax, Pabsmin=1e-3):
     val = ((-Pmax**(1 + Pbeta) + Pabsmin**(1 + Pbeta)) * (- Pabsmin**(1 + Pbeta) / (Pmax**(1 + Pbeta) - Pabsmin**(1 + Pbeta)) - np.random.rand()))**(1.0 / (1.0 + Pbeta))
