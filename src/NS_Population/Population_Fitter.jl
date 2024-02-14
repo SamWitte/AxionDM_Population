@@ -300,13 +300,16 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
     
     out_pop = simulate_pop(Nsamples, ages, beta=6e-40, tau_Ohm=tau_Ohm, width_threshold=0.1, pulsar_data=data_in, B_min=B_minT, B_max=B_maxT)
     num_out = length(out_pop[:,1])
-    pulsar_birth_rate = (Nsamples ./ max_T .* 100) .* (length(real_samples[:, 1]) ./ num_out)
+    num_real = length(real_samples[:, 1])
+    pulsar_birth_rate = (Nsamples ./ max_T .* 100) .* (num_real ./ num_out)
     # birth_prob = exp.(-(1.63 .- pulsar_birth_rate).^2 ./ (2 .* 0.46.^2))
-    birth_prob = exp.(-(1.63 .- pulsar_birth_rate).^2 ./ (2.0))
+    birth_prob = exp.(-(1.63 .- pulsar_birth_rate).^2 ./ (2.0 .* 1.2 .^2))
         
     print("Pulsar Birth Rate (per century) \t", pulsar_birth_rate, "\t", num_out, "\n")
     
-    
+    Pbins = 10 .^ range(-2, stop=1.2, length=20)
+    Pdotbins = 10 .^ range(-19, stop=-11, length=20)
+    Dval = 0.0
     if isempty(out_pop)
         print("Empty?? \n")
         return -Inf, 0.00
@@ -319,60 +322,89 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
         n_dat = length(real_samples[:, 1])
         cnt = 0
         log_q = []
-        for i in 1:length(P_out)
+        for i in 1:(length(Pbins) - 1)
+            for j in 1:(length(Pdotbins) - 1)
+                cond1 = Pdot_out .< Pdotbins[j + 1]
+                cond2 = Pdot_out .>= Pdotbins[j]
+                cond3 = P_out .< Pbins[i + 1]
+                cond4 = P_out .>= Pbins[i]
+                n_sim = sum(all(hcat(cond1, cond2, cond3, cond4), dims=2)) ./ num_out
+                if n_sim > 3
+                    sig_sim = sqrt.(n_sim ./ num_out)
+                else
+                    sig_sim = sqrt.(3 ./ num_out)
+                end
+                
+                cond1 = real_samples[:, 2] .< Pdotbins[j + 1]
+                cond2 = real_samples[:, 2] .>= Pdotbins[j]
+                cond3 = real_samples[:, 1] .< Pbins[i + 1]
+                cond4 = real_samples[:, 1] .>= Pbins[i]
+                n_obs = sum(all(hcat(cond1, cond2, cond3, cond4), dims=2)) ./ num_real
+                if n_obs > 3
+                    sig_obs = sqrt.(n_obs ./ num_real)
+                else
+                    sig_obs = sqrt.(3 ./ num_real)
+                end
+                
+                Dval += (n_sim .- n_obs).^2 ./ (2 .* (sig_obs.^2 .+ sig_sim.^2))
+                
             
-            # Q1
-            cond1 = Pdot_out .< Pdot_out[i]
-            cond2 = P_out .< P_out[i]
-            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
-            
-            cond1_d = real_samples[:, 2] .< Pdot_out[i]
-            cond2_d = real_samples[:, 1] .< P_out[i]
-            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
-            push!(log_q, abs(cdf_1 - cdf_2))
-            
-            # Q2
-            cond1 = Pdot_out .< Pdot_out[i]
-            cond2 = P_out .> P_out[i]
-            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
-            
-            cond1_d = real_samples[:, 2] .< Pdot_out[i]
-            cond2_d = real_samples[:, 1] .> P_out[i]
-            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
-            push!(log_q, abs(cdf_1 - cdf_2))
-            
-            # Q3
-            cond1 = Pdot_out .> Pdot_out[i]
-            cond2 = P_out .< P_out[i]
-            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
-            
-            cond1_d = real_samples[:, 2] .> Pdot_out[i]
-            cond2_d = real_samples[:, 1] .< P_out[i]
-            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
-            push!(log_q, abs(cdf_1 - cdf_2))
-            
-            # Q4
-            cond1 = Pdot_out .> Pdot_out[i]
-            cond2 = P_out .> P_out[i]
-            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
-            
-            cond1_d = real_samples[:, 2] .> Pdot_out[i]
-            cond2_d = real_samples[:, 1] .> P_out[i]
-            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
-            push!(log_q, abs(cdf_1 - cdf_2))
-            
+            end
         end
+#        for i in 1:length(P_out)
+            
+#            # Q1
+#            cond1 = Pdot_out .< Pdot_out[i]
+#            cond2 = P_out .< P_out[i]
+#            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
+            
+#            cond1_d = real_samples[:, 2] .< Pdot_out[i]
+#            cond2_d = real_samples[:, 1] .< P_out[i]
+#            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
+#            push!(log_q, abs(cdf_1 - cdf_2))
+            
+#            # Q2
+#            cond1 = Pdot_out .< Pdot_out[i]
+#            cond2 = P_out .> P_out[i]
+#            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
+            
+#            cond1_d = real_samples[:, 2] .< Pdot_out[i]
+#            cond2_d = real_samples[:, 1] .> P_out[i]
+#            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
+#            push!(log_q, abs(cdf_1 - cdf_2))
+            
+#            # Q3
+#            cond1 = Pdot_out .> Pdot_out[i]
+#            cond2 = P_out .< P_out[i]
+#            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
+            
+#            cond1_d = real_samples[:, 2] .> Pdot_out[i]
+#            cond2_d = real_samples[:, 1] .< P_out[i]
+#            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
+#            push!(log_q, abs(cdf_1 - cdf_2))
+            
+#            # Q4
+#            cond1 = Pdot_out .> Pdot_out[i]
+#            cond2 = P_out .> P_out[i]
+#            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
+            
+#            cond1_d = real_samples[:, 2] .> Pdot_out[i]
+#            cond2_d = real_samples[:, 1] .> P_out[i]
+#            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
+#            push!(log_q, abs(cdf_1 - cdf_2))
+            
+#        end
         # Dval = maximum(log_q)
-        Dval = sum(log_q)
+        # Dval = sum(log_q)
         
-        neff = n_dat .* n_sim ./ (n_dat .+ n_sim)
-        lam = sqrt.(neff) .* Dval ./ (1.0 .+ sqrt.(1.0 .- rval.^2) .* (0.25 .- 0.75 ./ sqrt.(neff)))
-        
-        Qval = 0.0
-        for i in 1:10
-            Qval += 2.0 .* (-1).^(i-1) .* exp.(-2 .* i.^2 .* lam)
-        end
-        
+        # neff = n_dat .* n_sim ./ (n_dat .+ n_sim)
+        # lam = sqrt.(neff) .* Dval ./ (1.0 .+ sqrt.(1.0 .- rval.^2) .* (0.25 .- 0.75 ./ sqrt.(neff)))
+        #
+        # Qval = 0.0
+        # for i in 1:10
+        #     Qval += 2.0 .* (-1).^(i-1) .* exp.(-2 .* i.^2 .* lam)
+        # end
+        Qval = exp.(- Dval)
         print("Dval \t", Dval, "  p(D > Dobs) \t", Qval .* birth_prob, "\n")
         return Dval, Qval .* birth_prob
     end
@@ -485,7 +517,10 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
         x0[3, :] .+= 0.1
 
     end
-    chain, llhoodvals = AffineInvariantMCMC.sample(log_probability, numwalkers, x0, Nruns, 1)
+    
+    chain, llhoodvals = AffineInvariantMCMC.sample(log_probability, numwalkers, x0, 100, 1)
+    
+    chain, llhoodvals = AffineInvariantMCMC.sample(log_probability, numwalkers, chain[:, :, end], Nruns, 1)
     flatchain, flatllhoodvals = AffineInvariantMCMC.flattenmcmcarray(chain, llhoodvals)
     aM = argmax(llhoodvals)
     return [llhoodvals[aM], chain[:, aM], transpose(flatchain), flatllhoodvals]
