@@ -110,7 +110,7 @@ function evolve_pulsar(B0, P0, Theta_in, age; n_times=1e2, beta=6e-40, tau_Ohm=1
     
     Bf = B0 .* exp.(- age ./ tau_Ohm);
     
-    prob = ODEProblem(RHS!, y0, tspan, Mvars, reltol=1e-4, abstol=1e-4, dtmin=1e-5, force_dtmin=true)
+    prob = ODEProblem(RHS!, y0, tspan, Mvars, reltol=1e-3, abstol=1e-6, dtmin=1e-5, force_dtmin=true)
     
     condition_r(u,lnt,integrator) = u[2]
     function affect_r!(integrator)
@@ -264,7 +264,7 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
         # push!(final_list, [Pf, Pdot])
         final_list[i, :] = [Pf, Pdot]
     end
-    print(test1, "\t", test2, "\t", length(temp_store[:,1]), "\n")
+    # print(test1, "\t", test2, "\t", length(temp_store[:,1]), "\n")
     final_out = final_list[final_list[:,1] .> 0.0, :]
     return final_out
 end
@@ -303,17 +303,9 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
     pulsar_birth_rate = (Nsamples ./ max_T .* 100) .* (length(real_samples[:, 1]) ./ num_out)
     # birth_prob = exp.(-(1.63 .- pulsar_birth_rate).^2 ./ (2 .* 0.46.^2))
     birth_prob = exp.(-(1.63 .- pulsar_birth_rate).^2 ./ (2.0))
-    
+        
     print("Pulsar Birth Rate (per century) \t", pulsar_birth_rate, "\t", num_out, "\n")
-    # print(max_T, "\t", num_out, "\n")
-#    Obs_pulsarN_L = (num_out - 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsL
-#    Obs_pulsarN_H = (num_out + 2*sqrt.(num_out)) ./ Nsamples .* num_pulsarsH
-    # print(num_out, "\n")
     
-#    if (N_pulsars_tot .< Obs_pulsarN_L)||(N_pulsars_tot .> Obs_pulsarN_H)
-#        print("Pred Low, Pred High, Actual \t", Obs_pulsarN_L , "\t", Obs_pulsarN_H, "\t", N_pulsars_tot, "\n" )
-#        return 100, 1e-100
-#    end
     
     if isempty(out_pop)
         print("Empty?? \n")
@@ -370,7 +362,8 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
             push!(log_q, abs(cdf_1 - cdf_2))
             
         end
-        Dval = maximum(log_q)
+        # Dval = maximum(log_q)
+        Dval = sum(log_q)
         
         neff = n_dat .* n_sim ./ (n_dat .+ n_sim)
         lam = sqrt.(neff) .* Dval ./ (1.0 .+ sqrt.(1.0 .- rval.^2) .* (0.25 .- 0.75 ./ sqrt.(neff)))
