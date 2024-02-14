@@ -127,10 +127,10 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
 
         age = draw_uniform_age(young=young)  # [yr]
         # print("pre evol")
-        start = time.time()
+        # start = time.time()
         tmes, Bfinal, Pfinal, chifinal = evolve_pulsars(B_0, P, chi, age, N_time=1000, tau_ohm=tau_ohm)
-        end = time.time()
-        print(end-start)
+        # end = time.time()
+        # print(end-start)
 
         # print("{:.2e}   {:.2e}   {:.3f}   {:.3f}".format(tmes[-1], Bfinal, Pfinal[-1], chifinal[-1]))
         dop_S = (vNS/2.998e5) * np.sin(sample_theta()) * np.sin(np.random.rand() * 2*np.pi)
