@@ -298,7 +298,8 @@ def evolve_pulsars(B_0, P, chi, age, N_time=1e5, tau_ohm=10.0e6):
     def call_F(t, y):
         return  RHS(t, y, beta=6e-40, tau_ohm=tau_ohm, B_0=B_0)
         
-    sol_tot = solve_ivp(call_F, [times[0], times[-1]], y0, t_eval=times, max_step=100000.0)
+    # sol_tot = solve_ivp(call_F, [times[0], times[-1]], y0, t_eval=times, max_step=100000.0)
+    sol_tot = solve_ivp(call_F, [times[0], times[-1]], y0, t_eval=times)
     # sol_tot = solve_ivp(call_F, [times[0], times[-1]], y0, t_eval=times)
     
     # sol = np.exp(np.asarray(sol_tot.y))
