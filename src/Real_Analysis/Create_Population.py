@@ -7,6 +7,10 @@ import argparse
 from scipy import stats
 from scipy.integrate import solve_ivp, odeint
 from fileNaming import *
+import time
+
+np.random.seed(0)
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--fIn',  help='Input file')
@@ -123,8 +127,10 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
 
         age = draw_uniform_age(young=young)  # [yr]
         # print("pre evol")
+        start = time.time()
         tmes, Bfinal, Pfinal, chifinal = evolve_pulsars(B_0, P, chi, age, N_time=1000, tau_ohm=tau_ohm)
-        
+        end = time.time()
+        print(end-start)
 
         # print("{:.2e}   {:.2e}   {:.3f}   {:.3f}".format(tmes[-1], Bfinal, Pfinal[-1], chifinal[-1]))
         dop_S = (vNS/2.998e5) * np.sin(sample_theta()) * np.sin(np.random.rand() * 2*np.pi)
@@ -257,6 +263,8 @@ def RHS(t, y, beta=6e-40, tau_ohm=10.0e6, B_0=1.0e12):
     B = B_0 * np.exp(- t / tau_ohm)
     P = y[0]
     chi = y[1]
+    # P = np.exp(y[0])
+    # chi = np.exp(y[1])
     
     # check death line
     alive = ((B / P**2)  > (0.34 * 1e12))
@@ -271,24 +279,29 @@ def RHS(t, y, beta=6e-40, tau_ohm=10.0e6, B_0=1.0e12):
 
     # Period Evolution
     dPdT = beta * B**2 / P * (alive * 1.0 + 1.0 * np.sin(chi)**2)
+    # dlnPdT = beta * B**2 / P * (alive * 1.0 + 1.0 * np.sin(chi)**2) / P
 
     # Chi Evolution
     dChidT = -1.0 * beta * B**2 / P**2 * np.abs(np.sin(chi) * np.cos(chi))
+    # dlnChidT = -1.0 * beta * B**2 / P**2 * np.abs(np.sin(chi) * np.cos(chi)) / chi
     
-#    return [dLogBdT ,  3.1536e+7*dPdT, 3.1536e+7*dChidT]  # 1/ yr
     return [3.1536e+7*dPdT, 3.1536e+7*dChidT]  # 1/ yr
+#    return [3.1536e+7*dlnPdT, 3.1536e+7*dlnChidT]  # 1/ yr
     
 def evolve_pulsars(B_0, P, chi, age, N_time=1e5, tau_ohm=10.0e6):
     
     times = np.geomspace(1, age, int(N_time))
 
+    # y0=[np.log(P), np.log(chi)]
     y0=[P, chi]
     # print("In: ", [(B_0) / 1e12, P, chi], times)
     def call_F(t, y):
         return  RHS(t, y, beta=6e-40, tau_ohm=tau_ohm, B_0=B_0)
         
-    sol_tot = solve_ivp(call_F, [times[0], times[-1]], y0, t_eval=times, max_step=10000.0)
-    # sol_tot = odeint(RHS, y0, times, args=(6e-40, tau_ohm, ), max_step=)
+    sol_tot = solve_ivp(call_F, [times[0], times[-1]], y0, t_eval=times, max_step=100000.0)
+    # sol_tot = solve_ivp(call_F, [times[0], times[-1]], y0, t_eval=times)
+    
+    # sol = np.exp(np.asarray(sol_tot.y))
     sol = np.asarray(sol_tot.y)
     
     # sol[0,:] = np.exp(sol[0,:])
