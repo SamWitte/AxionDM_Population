@@ -322,6 +322,8 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
         n_dat = length(real_samples[:, 1])
         cnt = 0
         log_q = []
+        neff = num_real .* num_out ./ (num_out .+ num_real)
+        
         for i in 1:(length(Pbins) - 1)
             for j in 1:(length(Pdotbins) - 1)
                 cond1 = Pdot_out .< Pdotbins[j + 1]
@@ -346,7 +348,8 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
                     sig_obs = sqrt.(3 ./ num_real)
                 end
                 
-                Dval += (n_sim .- n_obs).^2 ./ (2 .* (sig_obs.^2 .+ sig_sim.^2))
+                # Dval += (n_sim .- n_obs).^2 ./ (2 .* (sig_obs.^2 .+ sig_sim.^2))
+                Dval += sqrt.(neff) .* (n_sim .- n_obs).^2
                 
             
             end
