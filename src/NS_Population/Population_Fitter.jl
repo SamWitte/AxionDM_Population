@@ -302,8 +302,8 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
     num_out = length(out_pop[:,1])
     num_real = length(real_samples[:, 1])
     pulsar_birth_rate = (Nsamples ./ max_T .* 100) .* (num_real ./ num_out)
-    # birth_prob = exp.(-(1.63 .- pulsar_birth_rate).^2 ./ (2 .* 0.46.^2))
-    birth_prob = exp.(-(1.63 .- pulsar_birth_rate).^2 ./ (2.0 .* 1.2 .^2))
+    birth_prob = exp.(-(1.63 .- pulsar_birth_rate).^2 ./ (2 .* 0.46.^2))
+    # birth_prob = exp.(-(1.63 .- pulsar_birth_rate).^2 ./ (2.0 .* 1.2 .^2))
         
     print("Pulsar Birth Rate (per century) \t", pulsar_birth_rate, "\t", num_out, "\n")
     
@@ -324,34 +324,23 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
         log_q = []
         neff = num_real .* num_out ./ (num_out .+ num_real)
         
-        for i in 1:(length(Pbins) - 1)
-            for j in 1:(length(Pdotbins) - 1)
-                cond1 = Pdot_out .< Pdotbins[j + 1]
-                cond2 = Pdot_out .>= Pdotbins[j]
-                cond3 = P_out .< Pbins[i + 1]
-                cond4 = P_out .>= Pbins[i]
-                n_sim = sum(all(hcat(cond1, cond2, cond3, cond4), dims=2)) ./ num_out
-                if n_sim > 3
-                    sig_sim = sqrt.(n_sim ./ num_out)
-                else
-                    sig_sim = sqrt.(3 ./ num_out)
-                end
+        for i in 1:(length(Pbins))
+            for j in 1:(length(Pdotbins) )
+                cond1 = Pdot_out .< Pdotbins[j]
+                # cond2 = Pdot_out .>= Pdotbins[j]
+                cond3 = P_out .< Pbins[i]
+                # cond4 = P_out .>= Pbins[i]
+                cdf_sim = sum(all(hcat(cond1, cond3), dims=2)) ./ num_out
                 
-                cond1 = real_samples[:, 2] .< Pdotbins[j + 1]
-                cond2 = real_samples[:, 2] .>= Pdotbins[j]
-                cond3 = real_samples[:, 1] .< Pbins[i + 1]
-                cond4 = real_samples[:, 1] .>= Pbins[i]
-                n_obs = sum(all(hcat(cond1, cond2, cond3, cond4), dims=2)) ./ num_real
-                if n_obs > 3
-                    sig_obs = sqrt.(n_obs ./ num_real)
-                else
-                    sig_obs = sqrt.(3 ./ num_real)
-                end
+
+                cond1 = real_samples[:, 2] .< Pdotbins[j]
+                # cond2 = real_samples[:, 2] .>= Pdotbins[j]
+                cond3 = real_samples[:, 1] .< Pbins[i]
+                # cond4 = real_samples[:, 1] .>= Pbins[i]
+                cdf_real = sum(all(hcat(cond1, cond3), dims=2)) ./ num_real
                 
-                # Dval += (n_sim .- n_obs).^2 ./ (2 .* (sig_obs.^2 .+ sig_sim.^2))
-                Dval += sqrt.(neff) .* (n_sim .- n_obs).^2
+                Dval += sqrt.(neff) .* abs.(cdf_sim .- cdf_real)
                 
-            
             end
         end
 #        for i in 1:length(P_out)
@@ -407,9 +396,14 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
         # for i in 1:10
         #     Qval += 2.0 .* (-1).^(i-1) .* exp.(-2 .* i.^2 .* lam)
         # end
+        
         Qval = exp.(- Dval)
-        print("Dval \t", Dval, "  p(D > Dobs) \t", Qval .* birth_prob, "\n")
-        return Dval, Qval .* birth_prob
+        
+        if pulsar_birth_rate > 4.0
+            Qval *= birth_prob
+        end
+        print("Dval \t", Dval, "  p(D > Dobs) \t", Qval, "\n")
+        return Dval, Qval
     end
 end
 
