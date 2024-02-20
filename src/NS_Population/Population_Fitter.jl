@@ -53,20 +53,39 @@ function Lum(P, Pdot, dist; alpha=0.48, muLcorr=0.0, sigLcorr=0.8)
     return L1Ghz, L1Ghz / dist^2 ./ (4 .* pi .* (1 .- cos.(rhob)))
 end
 
+function radial_cdf(r)
+    # based on  2402.11428
+    cdf_v = zeros(length(r))
+    for i in 1:length(r)
+        cdf_v[i] = 1 .- 1.16247e-6 .* gamma(10.03, 4.36172 .+ 1.16003 .* r[i]) .+ 5.3303e-7 .* gamma(11.03, 4.36172 .+ 1.16003 .* r[i]) .- 6.11031e-8 .* gamma(12.03, 4.36172 .+ 1.16003 .* r[i])
+    end
+    return cdf_v
+end
+
+function sample_radial_coord()
+    rlist = range(0.0, 15.0, 400)
+    cdf_v = radial_cdf(rlist)
+    return rlist[argmin(abs.(cdf_v .- rand()))]
+end
+
 function sample_location(age; diskH=0.18, diskR=10.0)
     # hh = rand(range(-diskH, stop=diskH, length=1000))
     hh = diskH .* log.(1.0 ./ (1.0 .- rand()))
     if rand() .> 0.5
         hh *= -1.0
     end
-    rr = diskR * sqrt(rand())
+    # rr = diskR * sqrt(rand())
+    rr = sample_radial_coord()
+    
     phi_loc = 2 * pi * rand()
     x_cart = [rr * cos(phi_loc), rr * sin(phi_loc), hh]
+    
     # Vel1d = 0.9 * (2 * sqrt(190.0) * sqrt(log(1 / (1 - rand())))) + 0.1 * (2 * sqrt(786.0) * sqrt(log(1 / (1 - rand()))))
     # theta = acos(1.0 - 2.0 * rand())
     # phi = 2 * pi * rand()
     # vel_vec = Vel1d * [cos(phi) * sin(theta), sin(theta) * sin(phi), cos(theta)]
     # xpos = x_cart + vel_vec * age * (3.24078e-17 * 3.15e7)
+    
     xpos = x_cart
     return xpos
 end
