@@ -3,7 +3,7 @@ using Printf
 using PyCall
 using OrdinaryDiffEq
 using Statistics
-using SpecialFunctions: erfinv, erf
+using SpecialFunctions: erfinv, erf, gamma
 using DelimitedFiles
 using Distributions
 using LSODA
@@ -415,6 +415,11 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
         # for i in 1:10
         #     Qval += 2.0 .* (-1).^(i-1) .* exp.(-2 .* i.^2 .* lam)
         # end
+        
+        if Dval > 100
+            Dval /= 10.0
+            Dval += 100.0
+        end
         
         Qval = exp.(- Dval)
         
