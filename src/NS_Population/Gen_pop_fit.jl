@@ -38,6 +38,10 @@ function parse_commandline()
             arg_type = Bool
             default = false
             
+        "--constrain_birthrate"
+            arg_type = Bool
+            default = false
+            
         "--run_Combine"
             arg_type = Bool
             default = false
@@ -137,6 +141,7 @@ Pmin = parsed_args["Pmin"];
 Pmax = parsed_args["Pmax"];
 Bmin = parsed_args["Bmin"];
 Bmax = parsed_args["Bmax"];
+constrain_birthrate = parsed_args["constrain_birthrate"];
 sigP_min = parsed_args["sigP_min"];
 sigP_max = parsed_args["sigP_max"];
 sigB_min = parsed_args["sigB_min"];
@@ -172,7 +177,7 @@ end
 time0=Dates.now()
 
 if run_analysis == true
-    @inbounds @fastmath main(run_analysis, run_plot_data, tau_ohmic; Nsamples=Nsamples, max_T_f=max_T_f, fileName=fileName, xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=run_magnetars, kill_dead=kill_dead,  Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig, temp=temp, minimizeIt=minimizeIt, numwalkers=numwalkers, Nruns=Nruns, gauss_approx=gauss_approx, Pabsmin=Pabsmin);
+    @inbounds @fastmath main(run_analysis, run_plot_data, tau_ohmic; Nsamples=Nsamples, max_T_f=max_T_f, fileName=fileName, xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=run_magnetars, kill_dead=kill_dead,  Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig, temp=temp, minimizeIt=minimizeIt, numwalkers=numwalkers, Nruns=Nruns, gauss_approx=gauss_approx, Pabsmin=Pabsmin, constrain_birthrate=constrain_birthrate);
 end
 
 

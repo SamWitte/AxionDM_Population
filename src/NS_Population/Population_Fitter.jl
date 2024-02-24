@@ -289,7 +289,7 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
 end
 
 
-function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true, Pabsmin=1e-3)
+function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true, Pabsmin=1e-3, constrain_birthrate=false)
     
     if gauss_approx
         mu_P, mu_B, sig_P, sig_B = theta
@@ -423,7 +423,7 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
         
         Qval = exp.(- Dval)
         
-        if pulsar_birth_rate > 4.0
+        if (pulsar_birth_rate > 4.0)&&constrain_birthrate
             Qval *= birth_prob
         end
         print("Dval \t", Dval, "  p(D > Dobs) \t", Qval, "\n")
@@ -433,31 +433,7 @@ end
 
 
 
-function hard_scan(real_samples, rval, Nsamples; max_T=1e7, Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, tau_Ohm=10.0e6)
-    
-    Pmu_scan = range(Pmin, stop=Pmax, length=Npts_P)
-    Bmu_scan = range(log10.(Bmin), stop=log10.(Bmax), length=Npts_B)
-    Psig_scan = range(sigP_min, stop=sigP_max, length=NPts_Psig)
-    Bsig_scan = range(sigB_min, stop=sigB_max, length=NPts_Bsig)
-    qval_L = []
-    for i1 in 1:length(Pmu_scan)
-        for i2 in 1:length(Bmu_scan)
-            for i3 in 1:length(Psig_scan)
-                for i4 in 1:length(Bsig_scan)
-                    theta = [Pmu_scan[i1], Bmu_scan[i2], Psig_scan[i3], Bsig_scan[i4], 0.0]
-                    print(theta, "\n")
-                    Dval, qval = likelihood_func(theta, real_samples, rval, Nsamples, max_T, tau_Ohm=tau_Ohm)
-                  
-                    push!(qval_L, [Pmu_scan[i1], Bmu_scan[i2], Psig_scan[i3], Bsig_scan[i4], 0.0, Dval, qval])
-                    
-                end
-            end
-        end
-    end
-    return qval_L
-end
-
-function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh=0.0, Plow=-2.0, LBhigh=log10.(3e13), LBlow=log10.(1e12), sPlow=0.05, sPhigh=1.0, sBlow=0.1, sBhigh=1.2, numwalkers=5, Nruns=1000, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true, Pabsmin=1e-3)
+function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh=0.0, Plow=-2.0, LBhigh=log10.(3e13), LBlow=log10.(1e12), sPlow=0.05, sPhigh=1.0, sBlow=0.1, sBhigh=1.2, numwalkers=5, Nruns=1000, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true, Pabsmin=1e-3, constrain_birthrate=false)
     
     maxV = 1e20
     maxParams = nothing
@@ -480,7 +456,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
     
     function loss(xIn)
         
-        Dval, qval = likelihood_func(xIn, real_samples, rval, Nsamples, max_T, tau_Ohm=tau_Ohm, B_minT=B_minT, B_maxT=B_maxT, gauss_approx=gauss_approx, Pabsmin=Pabsmin)
+        Dval, qval = likelihood_func(xIn, real_samples, rval, Nsamples, max_T, tau_Ohm=tau_Ohm, B_minT=B_minT, B_maxT=B_maxT, gauss_approx=gauss_approx, Pabsmin=Pabsmin, constrain_birthrate=constrain_birthrate)
         # return Dval
         print(log.(qval), "\t", xIn, "\n")
         return log.(qval)
@@ -548,7 +524,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
 end
 
 
-function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=true, minimizeIt=false, numwalkers=5, Nruns=1, gauss_approx=true, Pabsmin=1e-3)
+function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=true, minimizeIt=false, numwalkers=5, Nruns=1, gauss_approx=true, Pabsmin=1e-3, constrain_birthrate=false)
 
     print("Tau \t", tau_ohmic, "\n")
     max_T = max_T_f * tau_ohmic
@@ -591,7 +567,7 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
 
     if run_analysis
         if minimizeIt
-            OUTALL = minimization_scan(true_pop, rval; max_T=max_T, Nsamples=Nsamples, numwalkers=numwalkers, Nruns=Nruns, tau_Ohm=tau_ohmic, B_minT=B_minT, B_maxT=B_maxT, gauss_approx=gauss_approx)
+            OUTALL = minimization_scan(true_pop, rval; max_T=max_T, Nsamples=Nsamples, numwalkers=numwalkers, Nruns=Nruns, tau_Ohm=tau_ohmic, B_minT=B_minT, B_maxT=B_maxT, gauss_approx=gauss_approx, constrain_birthrate=constrain_birthrate)
             out_bf = OUTALL[2]
             push!(out_bf, OUTALL[1])
             full_chain = OUTALL[3]
@@ -600,13 +576,6 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
             writedlm("output_fits/Best_Fit_"*fileName*".dat", out_bf)
             writedlm("output_fits/MCMC_"*fileName*".dat", full_chain)
             writedlm("output_fits/LLIKE_"*fileName*".dat", likeVals)
-        else
-            outputTable = hard_scan(true_pop, rval, Nsamples, max_T=max_T, Pmin=Pmin, Pmax=Pmax, Bmin=Bmin, Bmax=Bmax, sigP_min=sigP_min, sigP_max=sigP_max, sigB_min=sigB_min, sigB_max=sigB_max, Npts_P=Npts_P, Npts_B=Npts_B, NPts_Psig=NPts_Psig, NPts_Bsig=NPts_Bsig, tau_Ohm=tau_ohmic)
-            if temp
-                writedlm("temp/"*fileName*".dat", outputTable)
-            else
-                writedlm(fileName*".dat", outputTable)
-            end
         end
         
     end
