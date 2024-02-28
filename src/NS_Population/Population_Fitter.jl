@@ -12,6 +12,8 @@ using Suppressor
 using Dates
 using Distributed
 using SharedArrays
+using Optimization
+using OptimizationOptimJL
 # using Optim
 import AffineInvariantMCMC
 
@@ -524,7 +526,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
 end
 
 
-function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=true, minimizeIt=false, numwalkers=5, Nruns=1, gauss_approx=true, Pabsmin=1e-3, constrain_birthrate=false)
+function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=true, minimizeIt=false, numwalkers=5, Nruns=1, gauss_approx=true, Pabsmin=1e-3, constrain_birthrate=false, maxiters=100)
 
     print("Tau \t", tau_ohmic, "\n")
     max_T = max_T_f * tau_ohmic
@@ -576,6 +578,36 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
             writedlm("output_fits/Best_Fit_"*fileName*".dat", out_bf)
             writedlm("output_fits/MCMC_"*fileName*".dat", full_chain)
             writedlm("output_fits/LLIKE_"*fileName*".dat", likeVals)
+        else
+            
+            
+            function wrapL(u0, p)
+                print(u0, "\n")
+                if u0[2] < 12.0
+                    u0[2] = 12
+                end
+                if u0[2] > 13.5
+                    u0[2] = 13.5
+                end
+                if u0[3] < 0.1
+                    u0[3] = 0.1
+                end
+                if u0[4] < 0.1
+                    u0[4] = 0.1
+                end
+                
+                dV, qV = likelihood_func(u0, true_pop, rval, Nsamples, max_T; npts_cdf=50, tau_Ohm=tau_ohmic, B_minT=B_minT, B_maxT=B_maxT, gauss_approx=gauss_approx, Pabsmin=Pabsmin, constrain_birthrate=constrain_birthrate)
+                print("min val \t ", dV, "\n")
+                return dV
+            end
+            
+            u0 = [-0.5 12.7 0.5 0.5]
+            p = [1.0]
+
+            prob = OptimizationProblem(wrapL, u0, p)
+            sol = solve(prob, NelderMead(), maxiters=maxiters)
+            print("SOLUTION~~~~~~~~ \n\n", sol, "\n\n")
+            
         end
         
     end
