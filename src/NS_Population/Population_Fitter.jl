@@ -607,6 +607,7 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
             prob = OptimizationProblem(wrapL, u0, p)
             sol = solve(prob, NelderMead(), maxiters=maxiters)
             print("SOLUTION~~~~~~~~ \n\n", sol, "\n\n")
+            writedlm("output_fits/ProperMin_"*fileName*".dat", sol)
             
         end
         
