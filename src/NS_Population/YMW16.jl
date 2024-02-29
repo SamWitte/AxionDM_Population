@@ -68,10 +68,10 @@ function YMW_ne(r)
     w_ai = [300 500 300 500 300]
     nCN = 2.40
     phiCN = 109 .* pi / 180
-    delPhiCN = 8.2
+    delPhiCN = 8.2 .* pi / 180
     nSG = 0.626
     phiSG = 75.8 .* pi / 180
-    delPhiSG = 20.0
+    delPhiSG = 20.0 .* pi / 180
     
     Ka = 5.01
     A_a = 11680.0
@@ -80,8 +80,17 @@ function YMW_ne(r)
     
     for i in 1:5
         
-        armr = Rai[i] .* exp.((phi .+ 2 * pi .- phi_ai[i]) .* psi_ai[i])
-        s_ai = abs.(R .- armr);
+        # armr = Rai[i] .* exp.((phi .+ 2 * pi .- phi_ai[i]) .* tan.(psi_ai[i]))
+        if phi < 0
+            phi_mod = phi + 2*pi
+        else
+            phi_mod = phi
+        end
+        
+        armr = Rai[i] .* exp.((phi_mod .- phi_ai[i]) .* tan.(psi_ai[i]))
+        # s_ai = abs.(R .- armr);
+        phi_sa = log.(R ./ Rai[i]) ./ tan.(psi_ai[i]) .+ phi_ai[i]
+        s_ai = R .* sqrt.((cos.(phi) .- cos.(phi_sa)).^2 .+ (sin.(phi) .- sin.(phi_sa)).^2)
         
         efac = 1.0
         if i == 3
@@ -123,9 +132,11 @@ function YMW_ne(r)
         if((AGN .- abs.(xyp))<1e-15)
             alpha=PI/2;
         else
-            alpha=-atan((-(t5.Agn)*(t5.Kgn)*xyp)/((t5.Agn)*sqrt((t5.Agn)*(t5.Agn)-xyp*xyp)));
+            alpha=-atan((-(AGN)*(KGN)*xyp)/((AGN)*sqrt((AGN)*(AGN)-xyp*xyp)));
         end
-        sGN = abs.((R .- rp) .* sin.(theta .+ alpha));
+        rr  = sqrt.((x .- xGN).^2 .+ (y .- yGN).^2 .+ (z .- zGN).^2)
+        rp = sqrt.(zp.^2 .+ xyp.^2)
+        sGN = abs.((rr .- rp) .* sin.(theta .+ alpha));
         
         nGN = nGN0 .* exp( - (sGN ./ WGN).^2)
         GN = true
@@ -133,6 +144,7 @@ function YMW_ne(r)
         nGN = 0.0
         GN = false
     end
+    
     
     # local bubble
     JLB = 0.480
@@ -146,7 +158,7 @@ function YMW_ne(r)
         thetaLBI = 195.4 * pi / 180
         dThetaLBI = 28.4 * pi / 180
         W_LB1 = 14.2
-        HLB1=112.9
+        HLB1 = 112.9
         nLB2_0 = 2.33
         thetaLB2 = 278.2 * pi / 180
         dThetaLB2 = 14.7 * pi / 180
