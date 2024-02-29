@@ -224,6 +224,7 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
         
         xfin = sample_location(ages[i], diskH=0.5, diskR=10.0)
         xE = [0.0, 8.3, 0.0]
+        
         xfin_shift = xfin .- xE
         dist_earth = sqrt.(sum(xfin_shift.^2))
         
@@ -291,7 +292,7 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
 end
 
 
-function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true, Pabsmin=1e-3, constrain_birthrate=false)
+function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50, tau_Ohm=10.0e6, B_minT=1e10, B_maxT=4.4e13, gauss_approx=true, Pabsmin=1e-3, constrain_birthrate=false, ks_like=true)
     
     if gauss_approx
         mu_P, mu_B, sig_P, sig_B = theta
@@ -345,85 +346,89 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
         log_q = []
         neff = num_real .* num_out ./ (num_out .+ num_real)
         
-        for i in 1:(length(Pbins))
-            for j in 1:(length(Pdotbins) )
-                cond1 = Pdot_out .< Pdotbins[j]
-                # cond2 = Pdot_out .>= Pdotbins[j]
-                cond3 = P_out .< Pbins[i]
-                # cond4 = P_out .>= Pbins[i]
-                cdf_sim = sum(all(hcat(cond1, cond3), dims=2)) ./ num_out
-                
+        if !ks_like
+            for i in 1:(length(Pbins))
+                for j in 1:(length(Pdotbins) )
+                    cond1 = Pdot_out .< Pdotbins[j]
+                    # cond2 = Pdot_out .>= Pdotbins[j]
+                    cond3 = P_out .< Pbins[i]
+                    # cond4 = P_out .>= Pbins[i]
+                    cdf_sim = sum(all(hcat(cond1, cond3), dims=2)) ./ num_out
+                    
 
-                cond1 = real_samples[:, 2] .< Pdotbins[j]
-                # cond2 = real_samples[:, 2] .>= Pdotbins[j]
-                cond3 = real_samples[:, 1] .< Pbins[i]
-                # cond4 = real_samples[:, 1] .>= Pbins[i]
-                cdf_real = sum(all(hcat(cond1, cond3), dims=2)) ./ num_real
+                    cond1 = real_samples[:, 2] .< Pdotbins[j]
+                    # cond2 = real_samples[:, 2] .>= Pdotbins[j]
+                    cond3 = real_samples[:, 1] .< Pbins[i]
+                    # cond4 = real_samples[:, 1] .>= Pbins[i]
+                    cdf_real = sum(all(hcat(cond1, cond3), dims=2)) ./ num_real
+                    
+                    Dval += sqrt.(neff) .* abs.(cdf_sim .- cdf_real)
+                    
+                end
+            end
+            if Dval > 100
+                Dval /= 10.0
+                Dval += 100.0
+            end
+            
+            Qval = exp.(- Dval)
+        else
+            for i in 1:length(P_out)
                 
-                Dval += sqrt.(neff) .* abs.(cdf_sim .- cdf_real)
+                # Q1
+                cond1 = Pdot_out .< Pdot_out[i]
+                cond2 = P_out .< P_out[i]
+                cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / num_out
+                
+                cond1_d = real_samples[:, 2] .< Pdot_out[i]
+                cond2_d = real_samples[:, 1] .< P_out[i]
+                cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / num_real
+                push!(log_q, abs(cdf_1 - cdf_2))
+                
+                # Q2
+                cond1 = Pdot_out .< Pdot_out[i]
+                cond2 = P_out .> P_out[i]
+                cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / num_out
+                
+                cond1_d = real_samples[:, 2] .< Pdot_out[i]
+                cond2_d = real_samples[:, 1] .> P_out[i]
+                cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / num_real
+                push!(log_q, abs(cdf_1 - cdf_2))
+                
+                # Q3
+                cond1 = Pdot_out .> Pdot_out[i]
+                cond2 = P_out .< P_out[i]
+                cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / num_out
+                
+                cond1_d = real_samples[:, 2] .> Pdot_out[i]
+                cond2_d = real_samples[:, 1] .< P_out[i]
+                cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / num_real
+                push!(log_q, abs(cdf_1 - cdf_2))
+                
+                # Q4
+                cond1 = Pdot_out .> Pdot_out[i]
+                cond2 = P_out .> P_out[i]
+                cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / num_out
+                
+                cond1_d = real_samples[:, 2] .> Pdot_out[i]
+                cond2_d = real_samples[:, 1] .> P_out[i]
+                cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / num_real
+                push!(log_q, abs(cdf_1 - cdf_2))
                 
             end
-        end
-#        for i in 1:length(P_out)
+            Dval = maximum(log_q)
+            Dval = sum(log_q)
             
-#            # Q1
-#            cond1 = Pdot_out .< Pdot_out[i]
-#            cond2 = P_out .< P_out[i]
-#            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
+            neff = n_dat .* n_sim ./ (n_dat .+ n_sim)
+            lam = sqrt.(neff) .* Dval ./ (1.0 .+ sqrt.(1.0 .- rval.^2) .* (0.25 .- 0.75 ./ sqrt.(neff)))
             
-#            cond1_d = real_samples[:, 2] .< Pdot_out[i]
-#            cond2_d = real_samples[:, 1] .< P_out[i]
-#            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
-#            push!(log_q, abs(cdf_1 - cdf_2))
-            
-#            # Q2
-#            cond1 = Pdot_out .< Pdot_out[i]
-#            cond2 = P_out .> P_out[i]
-#            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
-            
-#            cond1_d = real_samples[:, 2] .< Pdot_out[i]
-#            cond2_d = real_samples[:, 1] .> P_out[i]
-#            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
-#            push!(log_q, abs(cdf_1 - cdf_2))
-            
-#            # Q3
-#            cond1 = Pdot_out .> Pdot_out[i]
-#            cond2 = P_out .< P_out[i]
-#            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
-            
-#            cond1_d = real_samples[:, 2] .> Pdot_out[i]
-#            cond2_d = real_samples[:, 1] .< P_out[i]
-#            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
-#            push!(log_q, abs(cdf_1 - cdf_2))
-            
-#            # Q4
-#            cond1 = Pdot_out .> Pdot_out[i]
-#            cond2 = P_out .> P_out[i]
-#            cdf_1 = sum(all(hcat(cond1, cond2), dims=2)) / n_sim
-            
-#            cond1_d = real_samples[:, 2] .> Pdot_out[i]
-#            cond2_d = real_samples[:, 1] .> P_out[i]
-#            cdf_2 = sum(all(hcat(cond1_d, cond2_d), dims=2)) / n_dat
-#            push!(log_q, abs(cdf_1 - cdf_2))
-            
-#        end
-        # Dval = maximum(log_q)
-        # Dval = sum(log_q)
-        
-        # neff = n_dat .* n_sim ./ (n_dat .+ n_sim)
-        # lam = sqrt.(neff) .* Dval ./ (1.0 .+ sqrt.(1.0 .- rval.^2) .* (0.25 .- 0.75 ./ sqrt.(neff)))
-        #
-        # Qval = 0.0
-        # for i in 1:10
-        #     Qval += 2.0 .* (-1).^(i-1) .* exp.(-2 .* i.^2 .* lam)
-        # end
-        
-        if Dval > 100
-            Dval /= 10.0
-            Dval += 100.0
+            Qval = 0.0
+            for i in 1:10
+                Qval += 2.0 .* (-1).^(i-1) .* exp.(-2 .* i.^2 .* lam)
+            end
         end
         
-        Qval = exp.(- Dval)
+        
         
         if (pulsar_birth_rate > 4.0)&&constrain_birthrate
             Qval *= birth_prob
@@ -526,7 +531,7 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
 end
 
 
-function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=true, minimizeIt=false, numwalkers=5, Nruns=1, gauss_approx=true, Pabsmin=1e-3, constrain_birthrate=false, maxiters=100)
+function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f=5.0, fileName="Test_Run", xIn=[0.05, log10.(1.4e13), 0.05, 0.65], run_magnetars=false, kill_dead=false,  Pmin=0.05, Pmax=0.75, Bmin=1e12, Bmax=5e13, sigP_min=0.05, sigP_max=0.4, sigB_min=0.1, sigB_max=1.2, Npts_P=5, Npts_B=5, NPts_Psig=5, NPts_Bsig=5, temp=true, minimizeIt=false, numwalkers=5, Nruns=1, gauss_approx=true, Pabsmin=1e-3, constrain_birthrate=false, maxiters=100, ks_like=true)
 
     print("Tau \t", tau_ohmic, "\n")
     max_T = max_T_f * tau_ohmic
@@ -596,7 +601,7 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
                     u0[4] = 0.1
                 end
                 
-                dV, qV = likelihood_func(u0, true_pop, rval, Nsamples, max_T; npts_cdf=50, tau_Ohm=tau_ohmic, B_minT=B_minT, B_maxT=B_maxT, gauss_approx=gauss_approx, Pabsmin=Pabsmin, constrain_birthrate=constrain_birthrate)
+                dV, qV = likelihood_func(u0, true_pop, rval, Nsamples, max_T; npts_cdf=50, tau_Ohm=tau_ohmic, B_minT=B_minT, B_maxT=B_maxT, gauss_approx=gauss_approx, Pabsmin=Pabsmin, constrain_birthrate=constrain_birthrate, ks_like=ks_like)
                 print("min val \t ", dV, "\n")
                 return dV
             end
@@ -607,7 +612,9 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
             prob = OptimizationProblem(wrapL, u0, p)
             sol = solve(prob, NelderMead(), maxiters=maxiters)
             print("SOLUTION~~~~~~~~ \n\n", sol, "\n\n")
-            writedlm("output_fits/ProperMin_"*fileName*".dat", sol)
+            writedlm("output_fits/ProperMin_Fit_"*fileName*".dat", sol.u)
+            outval = wrapL(sol.u, p)
+            writedlm("output_fits/ProperMin_Val_"*fileName*".dat", outval)
             
         end
         
