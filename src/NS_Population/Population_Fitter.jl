@@ -16,14 +16,14 @@ using Optimization
 using OptimizationOptimJL
 # using Optim
 import AffineInvariantMCMC
-
+include("YMW16.jl")
 # using Flux
 # using SciMLSensitivity
 
 # pyimport_conda("astropy.units", "")
 # Load required Python libraries
-u = pyimport("astropy.units")
-pygedm = pyimport("pygedm")
+# u = pyimport("astropy.units")
+# pygedm = pyimport("pygedm")
 
 
 # Random.seed!(1235)
@@ -265,7 +265,8 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
         end
         lum, s_den1GHz = Lum(Pf, Pdot, dist_earth, alpha=0.48, muLcorr=0.0, sigLcorr=0.8)
         
-        DM, tau_sc = pygedm.dist_to_dm(GC_l .* 180 ./ pi, GC_b .* 180 ./ pi, dist_earth * 1e3 * u.pc, method="ymw16")
+        DM = getDM(xfin .* 1e3, 10000)
+        # DM, tau_sc = pygedm.dist_to_dm(GC_l .* 180 ./ pi, GC_b .* 180 ./ pi, dist_earth * 1e3 * u.pc, method="ymw16")
         t_scat_mean = (3.6e-9 .* DM.^2 .* (1 .+ 1.94e-3 .* DM.^2)) .* (1400.0 ./ 327).^(-4.4)
         tau_sc = 10 .^(log10.(t_scat_mean) .+ sqrt(2) .* 0.5 .* erfinv(2 * rand() .- 1.0))
         
