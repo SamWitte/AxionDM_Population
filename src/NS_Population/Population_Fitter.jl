@@ -211,7 +211,7 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
     # final_list = []
     Theta_in = draw_chi(length(ages))
     
-    temp_store = zeros(length(ages), 8)
+    temp_store = zeros(length(ages), 9)
     
     Threads.@threads for i in 1:length(ages)
         if typeof(pulsar_data) == Nothing
@@ -246,10 +246,10 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
             continue
         end
         
-        GC_b = asin.(xfin[3] / dist_earth)
-        GC_l = atan.(xfin_shift[1], xfin_shift[2])
+        # GC_b = asin.(xfin[3] / dist_earth)
+        # GC_l = atan.(xfin_shift[1], xfin_shift[2])
         
-        temp_store[i, :] .= [ages[i], Bf, Pf, Pdot, GC_b, GC_l, dist_earth, ThetaF]
+        temp_store[i, :] .= [ages[i], Bf, Pf, Pdot, xfin[1], xfin[2], xfin[3], dist_earth, ThetaF]
     end
     
     temp_store = temp_store[temp_store[:,1] .> 0.0, :]
@@ -258,8 +258,9 @@ function simulate_pop(num_pulsars, ages; beta=6e-40, tau_Ohm=10.0e6, width_thres
     test1=0
     test2=0
     for i in 1:length(temp_store[:,1])
-        age, Bf, Pf, Pdot, GC_b, GC_l, dist_earth, ThetaF = temp_store[i, :]
-
+        age, Bf, Pf, Pdot, xfin_X, xfin_Y, xfin_Z, dist_earth, ThetaF = temp_store[i, :]
+        xfin = [xfin_X xfin_Y xfin_Z]
+        
         if beaming_cut(Pf, ThetaF) == 0
             continue
         end
