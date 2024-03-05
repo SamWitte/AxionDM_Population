@@ -308,12 +308,14 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
         B_in = 10 .^(out_samps[:,2])
         data_in = hcat(B_in, P_in)
     else
-        Pbeta, mu_B, Pmax, sig_B = theta
+        P_shape, mu_B, P_scale, sig_B = theta
         data_in = zeros(Nsamples, 2)
         for i in 1:Nsamples
             # Ptemp = (Pmax .^ (1 .+ Pbeta) .* rand()).^(1.0 ./ (1.0 .+ Pbeta))
             # Pabsmin=1e-3
-            Ptemp = ((-Pmax.^(1 .+ Pbeta) .+ Pabsmin .^(1 .+ Pbeta)) .* (- Pabsmin.^(1 .+ Pbeta) ./ (Pmax.^(1 .+ Pbeta) .- Pabsmin.^(1 .+ Pbeta)) .- rand())).^(1.0 ./ (1.0 .+ Pbeta))
+            # Ptemp = ((-Pmax.^(1 .+ Pbeta) .+ Pabsmin .^(1 .+ Pbeta)) .* (- Pabsmin.^(1 .+ Pbeta) ./ (Pmax.^(1 .+ Pbeta) .- Pabsmin.^(1 .+ Pbeta)) .- rand())).^(1.0 ./ (1.0 .+ Pbeta))
+            
+            Ptemp = P_scale .* (- log.(1.0 .- rand())).^(1.0 ./ P_shape)
             Btemp = draw_Bfield_lognorm(muB=mu_B, sigB=sig_B)
             data_in[i, :] = [Btemp Ptemp]
         end
@@ -455,8 +457,8 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
                 return 0.0
             end
         else
-            P_beta, Bv, Pmax, sB = theta
-            if (-3.0 .< P_beta .< 0.0)&&(LBlow .< Bv .< LBhigh)&&(0.1 .< Pmax .< 1.0)&&(sBlow .< sB .< sBhigh)
+            P_shape, Bv, P_scale, sB = theta
+            if (0.0 .< P_shape .< 10.0)&&(LBlow .< Bv .< LBhigh)&&(0.0 .< P_scale .< 50.0)&&(sBlow .< sB .< sBhigh)
                 return 0.0
             end
         end
@@ -515,12 +517,11 @@ function minimization_scan(real_samples, rval; max_T=1e7, Nsamples=100000, Phigh
         x0[4, :] .*= len_sB
         x0[4, :] .+= sBlow
         
-        len_Pbeta = 3.0
-        len_Pmax = (1.0 - 0.1)
-        x0[1, :] .*= len_Pbeta
-        x0[1, :] .+= -3.0
-        x0[3, :] .*= len_Pmax
-        x0[3, :] .+= 0.1
+        len_Pshape = 10.0
+        len_Pscale = 50.0
+        x0[1, :] .*= len_Pshape
+        x0[3, :] .*= len_Pscale
+        
 
     end
     
@@ -637,12 +638,14 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
             B_in = 10 .^(out_samps[:,2])
             data_in = hcat(B_in, P_in)
         else
-            Pbeta, mu_B, Pmax, sig_B = xIn
+            # Pbeta, mu_B, Pmax, sig_B = xIn
+            P_shape, mu_B, P_scale, sig_B = theta
             data_in = zeros(Nsamples, 2)
             for i in 1:Nsamples
                 # Ptemp = (Pmax .^ (1 .+ Pbeta) .* rand()).^(1.0 ./ (1.0 .+ Pbeta))
                 # Pabsmin=1e-3
-                Ptemp = ((-Pmax.^(1 .+ Pbeta) .+ Pabsmin .^(1 .+ Pbeta)) .* (- Pabsmin.^(1 .+ Pbeta) ./ (Pmax.^(1 .+ Pbeta) .- Pabsmin.^(1 .+ Pbeta)) .- rand())).^(1.0 ./ (1.0 .+ Pbeta))
+                # Ptemp = ((-Pmax.^(1 .+ Pbeta) .+ Pabsmin .^(1 .+ Pbeta)) .* (- Pabsmin.^(1 .+ Pbeta) ./ (Pmax.^(1 .+ Pbeta) .- Pabsmin.^(1 .+ Pbeta)) .- rand())).^(1.0 ./ (1.0 .+ Pbeta))
+                Ptemp = P_scale .* (- log.(1.0 .- rand())).^(1.0 ./ P_shape)
                 Btemp = draw_Bfield_lognorm(muB=mu_B, sigB=sig_B)
                 data_in[i, :] = [Ptemp Btemp]
             end
