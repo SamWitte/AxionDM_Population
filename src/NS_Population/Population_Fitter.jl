@@ -591,14 +591,31 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
             
             function wrapL(u0, p)
                 print(u0, "\n")
+                if gauss_approx
+                    if u0[3] < 0.1
+                        u0[3] = 0.1
+                    end
+                else
+                    if u0[1] < 0.1
+                        u0[1] = 0.1
+                    end
+                    if u0[1] > 10.0
+                        u0[1] = 10.0
+                    end
+                    if u0[3] < 0.1
+                        u0[3] = 0.1
+                    end
+                    if u0[3] > 50.0
+                        u0[3] = 50.0
+                    end
+                
+                end
+                
                 if u0[2] < 12.0
                     u0[2] = 12
                 end
                 if u0[2] > 13.5
                     u0[2] = 13.5
-                end
-                if u0[3] < 0.1
-                    u0[3] = 0.1
                 end
                 if u0[4] < 0.1
                     u0[4] = 0.1
@@ -609,7 +626,11 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
                 return dV
             end
             
-            u0 = [-0.5 12.7 0.5 0.5]
+            if gauss_approx
+                u0 = [-0.5 12.7 0.5 0.5]
+            else
+                u0 = [3.0 12.7 10.0 0.5]
+            end
             p = [1.0]
 
             prob = OptimizationProblem(wrapL, u0, p)
