@@ -315,7 +315,8 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
             # Pabsmin=1e-3
             # Ptemp = ((-Pmax.^(1 .+ Pbeta) .+ Pabsmin .^(1 .+ Pbeta)) .* (- Pabsmin.^(1 .+ Pbeta) ./ (Pmax.^(1 .+ Pbeta) .- Pabsmin.^(1 .+ Pbeta)) .- rand())).^(1.0 ./ (1.0 .+ Pbeta))
             
-            Ptemp = P_scale .* (- log.(1.0 .- rand())).^(1.0 ./ P_shape)
+            wdist = Weibull(P_shape, P_scale)
+            Ptemp = 2 * pi ./ rand(wdist)
             Btemp = draw_Bfield_lognorm(muB=mu_B, sigB=sig_B)
             data_in[i, :] = [Btemp Ptemp]
         end
@@ -629,7 +630,7 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
             if gauss_approx
                 u0 = [-0.5 12.7 0.5 0.5]
             else
-                u0 = [3.0 12.7 10.0 0.5]
+                u0 = [1.0 12.7 14.0 0.5]
             end
             p = [1.0]
 
@@ -666,7 +667,8 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
                 # Ptemp = (Pmax .^ (1 .+ Pbeta) .* rand()).^(1.0 ./ (1.0 .+ Pbeta))
                 # Pabsmin=1e-3
                 # Ptemp = ((-Pmax.^(1 .+ Pbeta) .+ Pabsmin .^(1 .+ Pbeta)) .* (- Pabsmin.^(1 .+ Pbeta) ./ (Pmax.^(1 .+ Pbeta) .- Pabsmin.^(1 .+ Pbeta)) .- rand())).^(1.0 ./ (1.0 .+ Pbeta))
-                Ptemp = P_scale .* (- log.(1.0 .- rand())).^(1.0 ./ P_shape)
+                wdist = Weibull(P_shape, P_scale)
+                Ptemp = 2 * pi ./ rand(wdist)
                 Btemp = draw_Bfield_lognorm(muB=mu_B, sigB=sig_B)
                 data_in[i, :] = [Ptemp Btemp]
             end
