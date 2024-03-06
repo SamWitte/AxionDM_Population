@@ -28,6 +28,7 @@ function YMW_ne(r)
     Bd = 15000.0
     Ad = 2500
     H1 = 1673.0
+    
     # thick disk
     if R < Bd
         g_d = 1.0

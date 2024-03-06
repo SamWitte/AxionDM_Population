@@ -28,6 +28,9 @@ include("YMW16.jl")
 
 # Random.seed!(1235)
 
+function weibull_mod(P, J, K)
+    return J ./ (K .* P.^2) .* (1.0 ./ (K .* P)).^(J .- 1.0) .* exp.(- 1.0 ./ (K .* P).^J)
+end
 
 function beaming_cut(P, ThetaF)
     # one way
@@ -309,14 +312,16 @@ function likelihood_func(theta, real_samples, rval, Nsamples, max_T; npts_cdf=50
         data_in = hcat(B_in, P_in)
     else
         P_shape, mu_B, P_scale, sig_B = theta
+        Plist = 10 .^ range(-2.5, 1.5, 1000)
+        
         data_in = zeros(Nsamples, 2)
         for i in 1:Nsamples
             # Ptemp = (Pmax .^ (1 .+ Pbeta) .* rand()).^(1.0 ./ (1.0 .+ Pbeta))
             # Pabsmin=1e-3
             # Ptemp = ((-Pmax.^(1 .+ Pbeta) .+ Pabsmin .^(1 .+ Pbeta)) .* (- Pabsmin.^(1 .+ Pbeta) ./ (Pmax.^(1 .+ Pbeta) .- Pabsmin.^(1 .+ Pbeta)) .- rand())).^(1.0 ./ (1.0 .+ Pbeta))
             
-            wdist = Weibull(P_shape, P_scale)
-            Ptemp = 2 * pi ./ rand(wdist)
+            wegt = weibull_mod(Plist, P_shape, P_scale)
+            Ptemp = sample(Plist, Weights(wegt), 1)[1]
             Btemp = draw_Bfield_lognorm(muB=mu_B, sigB=sig_B)
             data_in[i, :] = [Btemp Ptemp]
         end
@@ -661,16 +666,18 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
             data_in = hcat(B_in, P_in)
         else
             # Pbeta, mu_B, Pmax, sig_B = xIn
-            P_shape, mu_B, P_scale, sig_B = theta
+            P_shape, mu_B, P_scale, sig_B = xIn
             data_in = zeros(Nsamples, 2)
+            
+            Plist = 10 .^ range(-2.5, 1.5, 1000)
+        
             for i in 1:Nsamples
-                # Ptemp = (Pmax .^ (1 .+ Pbeta) .* rand()).^(1.0 ./ (1.0 .+ Pbeta))
-                # Pabsmin=1e-3
-                # Ptemp = ((-Pmax.^(1 .+ Pbeta) .+ Pabsmin .^(1 .+ Pbeta)) .* (- Pabsmin.^(1 .+ Pbeta) ./ (Pmax.^(1 .+ Pbeta) .- Pabsmin.^(1 .+ Pbeta)) .- rand())).^(1.0 ./ (1.0 .+ Pbeta))
-                wdist = Weibull(P_shape, P_scale)
-                Ptemp = 2 * pi ./ rand(wdist)
+         
+                wegt = weibull_mod(Plist, P_shape, P_scale)
+                Ptemp = sample(Plist, Weights(wegt), 1)[1]
                 Btemp = draw_Bfield_lognorm(muB=mu_B, sigB=sig_B)
-                data_in[i, :] = [Ptemp Btemp]
+                # print(Ptemp, "\t", Btemp, "\n")
+                data_in[i, :] = [Btemp Ptemp]
             end
             
         end
@@ -681,7 +688,7 @@ function main(run_analysis, run_plot_data, tau_ohmic; Nsamples=10000000, max_T_f
         ages = rand(1:max_T, length(data_in[:, 1]))
         
         out_pop = simulate_pop(Nsamples, ages, tau_Ohm=tau_ohmic, pulsar_data=data_in)
-        
+        # print(out_pop)
         writedlm(fileName*".dat", out_pop)
         writedlm(fileName*"_IN.dat", data_in)
     end
