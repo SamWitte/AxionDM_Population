@@ -105,7 +105,7 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
                 # P = draw_period_PL(P0_c, sig_P0, Pabsmin=Pmin)
                 PvalList = np.logspace(-2.5, 1.5, 10000)
                 wgts = weibull_dist(PvalList, P0_c, sig_P0)
-                P = np.random.choice(PvalList, 1, p=(wgts / np.sum(wgts)))
+                P = np.random.choice(PvalList, 1, p=(wgts / np.sum(wgts)))[0]
                 
             alive = ((B_0 / P**2)  > (0.34 * 1e12))
             
