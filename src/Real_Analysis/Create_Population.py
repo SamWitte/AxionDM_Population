@@ -78,6 +78,9 @@ return_width = True
 
 
     
+def weibull_dist(P, J, K):
+    return J / (K * P**2) * (1 / (K * P))**(J - 1.0) * np.exp(- 1.0 / (K * P)**J)
+
 def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm, ftag, gauss_approx=True, Pmin=1e-3):
         
     N_pulsars = total_num_pulsars(young=True)
@@ -97,9 +100,12 @@ def run_pulsar_population(output_dir, MassA, B0_c, sig_B0, P0_c, sig_P0, tau_ohm
         while (not alive):
             B_0 = draw_field(B0_c, sig_B0)
             if gauss_approx:
-                P = draw_period(P0_c, sig_P0)
+                P = 10.0**draw_period(P0_c, sig_P0)
             else:
-                P = draw_period_PL(P0_c, sig_P0, Pabsmin=Pmin)
+                # P = draw_period_PL(P0_c, sig_P0, Pabsmin=Pmin)
+                PvalList = np.logspace(-2.5, 1.5, 10000)
+                wgts = weibull_dist(PvalList, P0_c, sig_P0)
+                P = np.random.choice(PvalList, 1, p=(wgts / np.sum(wgts)))
                 
             alive = ((B_0 / P**2)  > (0.34 * 1e12))
             
