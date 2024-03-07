@@ -9,7 +9,7 @@ from scipy.integrate import solve_ivp, odeint
 from fileNaming import *
 import time
 
-np.random.seed(0)
+# np.random.seed(0)
 
 
 parser = argparse.ArgumentParser()
