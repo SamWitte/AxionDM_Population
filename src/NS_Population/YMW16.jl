@@ -131,7 +131,7 @@ function YMW_ne(r)
         
         rp=sqrt.(zp.^2 .+ xyp.^2);
         if((AGN .- abs.(xyp))<1e-15)
-            alpha=PI/2;
+            alpha = pi ./ 2;
         else
             alpha=-atan((-(AGN)*(KGN)*xyp)/((AGN)*sqrt((AGN)*(AGN)-xyp*xyp)));
         end
