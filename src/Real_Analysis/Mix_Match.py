@@ -96,9 +96,10 @@ def gen_population(f_out, massD, tau_ohm, MassA):
         
         flux_weight = data_in[:, 0] * (1.60e-12) * weight_rescale / dist_earth**2 * (3.24e-22)**2 / 1e-23 # Jy-Hz
         erg_list = -data_in[:, 1] * (1 + dop_S)
-        print(locNS)
+        
         for j in range(len(erg_list)):
-            output_pop.append([i, flux_weight[j], erg_list[j], data_in[j, 2], locNS[j, 0], locNS[j, 1], locNS[j, 2]])
+            if len(erg_list) > 1: # one photon dont trust....
+                output_pop.append([i, flux_weight[j], erg_list[j], data_in[j, 2], locNS[j, 0], locNS[j, 1], locNS[j, 2]])
         
     output_pop = np.asarray(output_pop)
     print("Rough estimate total radio flux @ g=1e-12 in Jy: \t ", np.sum(output_pop[:,1]) / (MassA * 1e-5 / 6.58e-16))
