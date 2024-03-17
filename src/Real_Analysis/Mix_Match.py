@@ -38,9 +38,19 @@ def gen_population(f_out, massD, tau_ohm, MassA):
     Npop = len(Pop_topL)
     print("Number of populations used: \t", Npop)
     generalF = np.empty(Npop, dtype=object)
+    total_entries = np.zeros(Npop, dtype=int)
     for i in range(Npop):
+        maxR = 0
         generalF[i] = np.loadtxt(Pop_topL[i])
-        
+        check_run_files = glob.glob(output_dir + f_out + massD + "Pop_{:.0f}/NS_*__Theta*.txt".format(indxP))
+        for j in range(len(check_run_files)):
+            p1 = check_run_files[j].find("/NS_")
+            p2 = check_run_files[j].find("__Theta")
+            indxRun = int(check_run_files[p1 + len("/NS_"):p2])
+            if indxRun > maxR:
+                maxR = indxRun
+        total_entries[i] = maxR
+        print("Check total entries", i, total_entries[i])
 
     N_pulsars_young = total_num_pulsars(young=True)
     N_pulsars_old = total_num_pulsars(young=False, tau_ohm=tau_ohm)
@@ -51,8 +61,9 @@ def gen_population(f_out, massD, tau_ohm, MassA):
     # only position is re-sampled!
     for i in range(Ntot):
         indxP = np.random.randint(Npop)
-        total_entries = len(generalF[indxP])
-        NS_num = np.random.randint(total_entries)
+        # this worked if all NSs run...
+        # total_entries = len(generalF[indxP])
+        NS_num = np.random.randint(total_entries[indxP])
         NS_info = generalF[indxP][NS_num, :]
         
         NS_outFile = glob.glob(output_dir + f_out + massD + "Pop_{:.0f}/NS_{:.0f}__Theta*.txt".format(indxP, NS_num))
