@@ -46,7 +46,7 @@ def gen_population(f_out, massD, tau_ohm, MassA):
         for j in range(len(check_run_files)):
             p1 = check_run_files[j].find("/NS_")
             p2 = check_run_files[j].find("__Theta")
-            indxRun = int(check_run_files[p1 + len("/NS_"):p2])
+            indxRun = int(check_run_files[j][p1 + len("/NS_"):p2])
             if indxRun > maxR:
                 maxR = indxRun
         total_entries[i] = maxR
