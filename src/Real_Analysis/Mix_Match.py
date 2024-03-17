@@ -42,7 +42,7 @@ def gen_population(f_out, massD, tau_ohm, MassA):
     for i in range(Npop):
         maxR = 0
         generalF[i] = np.loadtxt(Pop_topL[i])
-        check_run_files = glob.glob(output_dir + f_out + massD + "Pop_{:.0f}/NS_*__Theta*.txt".format(indxP))
+        check_run_files = glob.glob(output_dir + f_out + massD + "Pop_{:.0f}/NS_*__Theta*.txt".format(i))
         for j in range(len(check_run_files)):
             p1 = check_run_files[j].find("/NS_")
             p2 = check_run_files[j].find("__Theta")
