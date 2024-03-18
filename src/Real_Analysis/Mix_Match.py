@@ -62,8 +62,11 @@ def gen_population(f_out, massD, tau_ohm, MassA):
     for i in range(Ntot):
         indxP = np.random.randint(Npop)
         # this worked if all NSs run...
-        # total_entries = len(generalF[indxP])
-        NS_num = np.random.randint(total_entries[indxP])
+        total_entries_all = len(generalF[indxP])
+        if total_entries_all > 30000:
+            NS_num = np.random.randint(30000)
+        else:
+            NS_num = np.random.randint(total_entries_all)
         NS_info = generalF[indxP][NS_num, :]
         
         NS_outFile = glob.glob(output_dir + f_out + massD + "Pop_{:.0f}/NS_{:.0f}__Theta*.txt".format(indxP, NS_num))
