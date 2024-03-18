@@ -95,7 +95,7 @@ def gen_population(f_out, massD, tau_ohm, MassA):
         xE = np.array([0.0, 8.3, 0.0])
         dist_earth = np.sqrt(np.sum((xE - locNS)**2))
         
-        weight_rescale = (NFW(r_x) / NS_info[8]) * (NS_info[9] / v0_DM(r_x))
+        weight_rescale = (NFW(r_x) / NS_info[8]) * (NS_info[9] / v0_DM(r_x))**2
         
         flux_weight = data_in[:, 0] * (1.60e-12) * weight_rescale / dist_earth**2 * (3.24e-22)**2 / 1e-23 # Jy-Hz
         erg_list = -data_in[:, 1] * (1 + dop_S)
