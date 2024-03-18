@@ -228,6 +228,9 @@ def script_pop(num_scripts, PopIdx, script_dir, output_dir, MassA, ftag, tau_ohm
     for i in range(len(data_in[:,0])):
         # [i, B_0, P, chi, Bfinal[-1], Pfinal[-1], chifinal[-1], age/1e6, rho_DM, v0_DM, locNS[0], locNS[1], locNS[2], vNS[0], vNS[1], vNS[2], MassNS, radiusNS, view_angle]
         
+        # only run 30000, otherwise this will never finish....
+        if i > 30000:
+            continue
         if check_conversion(MassA, data_in[i, 4], data_in[i, 5], data_in[i, 6]) == 0:
             continue
             
