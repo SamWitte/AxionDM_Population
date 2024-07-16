@@ -91,12 +91,11 @@ function func!(du, u, Mvars, lnt)
         xVals = view(u, :, 1:3)
         erg_loc = erg_inf ./ sqrt.(g_rr)
         
-        du[:, 4:6] .= -grad(hamiltonian(seed(xVals), k_loc, time[1], -view(u, :, 7) .* sqrt.(g_rr), θm, ωPul, B0, rNS, Mass_NS, iso=isotropic, melrose=melrose, flat=flat)) .* c_km .* t .* (g_rr ./ erg_inf) ./ erg_inf;
-        du[:, 1:3] .= grad(hamiltonian(xVals, seed(k_loc), time[1], -view(u, :, 7) .* sqrt.(g_rr), θm, ωPul, B0, rNS, Mass_NS, iso=isotropic, melrose=melrose, flat=flat)) .* c_km .* t .* (g_rr ./ erg_inf);
+        du[:, 4:6] .= -grad(hamiltonian(seed(xVals), k_loc, time[1], -view(u, :, 7), θm, ωPul, B0, rNS, Mass_NS, iso=isotropic, melrose=melrose, flat=flat)) .* c_km .* t .* (g_rr ./ -view(u, :, 7)) ./ erg_inf;
+        du[:, 1:3] .= grad(hamiltonian(xVals, seed(k_loc), time[1], -view(u, :, 7), θm, ωPul, B0, rNS, Mass_NS, iso=isotropic, melrose=melrose, flat=flat)) .* c_km .* t .* (g_rr ./ -view(u, :, 7));
         
-        # du[:, 7] .= -derivative(tI -> hamiltonian(xVals, k_loc, tI, -view(u, :, 7) .* sqrt.(g_rr), θm, ωPul, B0, rNS, Mass_NS, iso=isotropic, melrose=melrose, flat=flat), time[1])[:] .* t .* (g_rr[:] ./ (-view(u, :, 7) .* sqrt.(g_rr))) .* g_rr[:]; # note extra g_rr[:] is coming from fact that were doing E_inf
+        du[:, 7] .= -derivative(tI -> hamiltonian(xVals, k_loc, tI, -view(u, :, 7), θm, ωPul, B0, rNS, Mass_NS, iso=isotropic, melrose=melrose, flat=flat), time[1])[:] .* t .* (g_rr[:] ./ (-view(u, :, 7) .* sqrt.(g_rr))) .* g_rr[:]; # note extra g_rr[:] is coming from fact that were doing E_inf
         
-        du[:, 7] .= -hamiltonian(xVals, k_loc, Dual(time[1], 1.0), -view(u, :, 7) .* sqrt.(g_rr), θm, ωPul, B0, rNS, Mass_NS, iso=isotropic, melrose=melrose, flat=flat, time_deriv=true)[1].partials .* t .* (g_rr[:] ./ erg_inf);
         du[u[:,1] .<= rNS .* 1.01, :] .= 0.0;
     
         
